@@ -1,20 +1,25 @@
-# Rapporto privacy — PianificatoreTurniOnline
+# Rapporto privacy — PianificatoreTurni
 
 **Data:** 2026-11-20 (UTC)  
-**Repo:** `MBRP95/PianificatoreTurniOnline`  
+**Repo:** `MBRP95/PianificatoreTurni`  
 **Branch:** `main` (unico commit iniziale; `git rev-parse origin/main`)  
 **Firebase:** `pianificatoreturni` (invariato)
 
 ## Classificazione
 
-**BONIFICATO LOCALMENTE, IN ATTESA DI GITHUB SUPPORT (sulla repo legacy)**  
-+ nuova repository operativa indipendente dalla cronologia contaminata.
+**BONIFICATO LOCALMENTE, IN ATTESA DI GITHUB SUPPORT (sulla repo legacy privata)**  
+Superfici **pubbliche** controllate (nuovo repo + nuovo Pages): senza marker noti.  
+Repo legacy non più pubblica (404 anonimo). Purge GitHub Support ancora utile per oggetti/cache lato owner.
+
 
 ## Cosa è risolto qui
 
 | Superficie | Stato |
 |------------|--------|
 | Tree di questa repository | Solo file selezionati dal tip Pages bonificato |
+| Pages `mbrp95.github.io/PianificatoreTurni/` | **built**, marker **0** (verifica 2026-11-20T08:14Z) |
+| ZIP pubblico `main` | marker **0** |
+| Legacy pubblica | **chiusa** (404 su web/API/codeload/Pages vecchio) |
 | Cronologia Git | Un commit iniziale — nessun oggetto legacy importato |
 | Marker PII noti (testo/xlsx) | 0 nel tree |
 | Client Auth | Auth diretta; niente `staffLoginKeyId` |

@@ -32,3 +32,9 @@ https://github.com/MBRP95/Pianificatore-Turni/blob/cursor/ui-cell-menu-straordin
 2. Support ha confermato purge (o rischio residuo accettato per scritto).  
 3. Opzionale: archiviare la legacy come read-only / private; **non** force-push della vecchia cronologia.  
 4. Non eliminare finché il backup offline è integro.
+
+
+## Stato verificato (2026-11-20T08:14Z)
+
+Accesso **anonimo** a `MBRP95/Pianificatore-Turni` (pagina, API, ZIP, commit SHA, Pages): **404**.  
+Owner: archiviata/private secondo dichiarazione operativa; eventuali refs restano rilevanti solo per purge Support / accesso autenticato.

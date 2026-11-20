@@ -1,9 +1,9 @@
 # Nuova repository pulita — Pianificatore Turni
 
-**Repository nuova:** https://github.com/MBRP95/PianificatoreTurniOnline  
+**Repository nuova:** https://github.com/MBRP95/PianificatoreTurni  
 **Repository originale (non eliminata):** https://github.com/MBRP95/Pianificatore-Turni  
 **Sito originale (ancora attivo finché il nuovo non è verificato):** https://mbrp95.github.io/Pianificatore-Turni/  
-**Sito nuovo (dopo GitHub Pages):** https://mbrp95.github.io/PianificatoreTurniOnline/
+**Sito nuovo (dopo GitHub Pages):** https://mbrp95.github.io/PianificatoreTurni/
 
 ## Obiettivo
 
@@ -56,10 +56,10 @@ Non sono stati usati backup pre-force, SHA orfani, ZIP per commit storici, né a
 Attivazione API da agent: **403** (permesso Pages non nel token).  
 Passo owner (1 minuto):
 
-1. Apri https://github.com/MBRP95/PianificatoreTurniOnline/settings/pages  
+1. Apri https://github.com/MBRP95/PianificatoreTurni/settings/pages  
 2. Source → **Deploy from a branch**  
 3. Branch **main** / folder **/ (root)** → Save  
-4. Attendi build → https://mbrp95.github.io/PianificatoreTurniOnline/  
+4. Attendi build → https://mbrp95.github.io/PianificatoreTurni/  
 5. In Firebase Console → Authentication → Authorized domains → assicurati che `mbrp95.github.io` sia presente (vale per entrambi i path Pages)
 
 
@@ -94,7 +94,23 @@ Non eliminata. Gli oggetti orfani / `refs/pull/3/head` restano un problema **sep
 
 ## Problemi residui
 
-- Repo creata dall’owner: `MBRP95/PianificatoreTurniOnline` (pubblica, tree pushato).
+- Repo creata dall’owner: `MBRP95/PianificatoreTurni` (pubblica, tree pushato).
 - Attivazione GitHub Pages: **manuale** (API 403 sul token agent).
 - Finché Pages nuovo non è verificato, il sito originale resta la fonte pubblica operativa.
 - La nuova repo **non** rimuove i dati residui dalla vecchia.
+
+
+## Aggiornamento post-rinomina (2026-11-20T08:14Z)
+
+| Voce | Stato verificato |
+|------|------------------|
+| Repo operativa | https://github.com/MBRP95/PianificatoreTurni (ex PianificatoreTurniOnline) |
+| Pages | https://mbrp95.github.io/PianificatoreTurni/ — **built** @ tip `main` |
+| Scan Pages (marker noti) | **0** hit su risorse crawlate |
+| ZIP `main` | **0** marker |
+| Vecchio Pages `…/Pianificatore-Turni/` | **404** pubblico |
+| Vecchio Pages `…/PianificatoreTurniOnline/` | **404** |
+| Repo legacy `MBRP95/Pianificatore-Turni` (anon/API/codeload) | **404** — non più pubblica |
+| Firebase | `pianificatoreturni` invariato; probe unauth **PASS** |
+
+La legacy resta eventualmente accessibile solo con credenziali owner (git privato): non è più scaricabile anonimamente. La purge Support degli oggetti interni resta consigliata se si vuole eliminare anche l’accessibilità autenticata/cache GitHub.

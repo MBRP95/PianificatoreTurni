@@ -2,8 +2,8 @@
 
 Versione operativa **senza cronologia Git importata** dalla repository originale.
 
-- **Repo:** https://github.com/MBRP95/PianificatoreTurniOnline  
-- **Pages (dopo attivazione):** https://mbrp95.github.io/PianificatoreTurniOnline/  
+- **Repo:** https://github.com/MBRP95/PianificatoreTurni  
+- **Pages (dopo attivazione):** https://mbrp95.github.io/PianificatoreTurni/  
 - **Firebase:** progetto esistente `pianificatoreturni` (nessun DB nuovo)
 
 La repository originale `MBRP95/Pianificatore-Turni` resta online finché questo sito non è verificato.  

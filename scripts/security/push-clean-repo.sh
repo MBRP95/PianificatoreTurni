@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Push the single-commit clean tree to MBRP95/PianificatoreTurniOnline.
+# Push the single-commit clean tree to MBRP95/PianificatoreTurni.
 # Requires: empty repo already created on GitHub (no README/license if possible).
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$ROOT"
-REMOTE_URL="${1:-https://github.com/MBRP95/PianificatoreTurniOnline.git}"
+REMOTE_URL="${1:-https://github.com/MBRP95/PianificatoreTurni.git}"
 
 ./scripts/security/verify-no-pii.sh HEAD
 

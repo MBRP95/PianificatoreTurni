@@ -18,7 +18,7 @@ Requisiti rete: la VPN deve lasciare passare Google/Firebase (di solito già ok 
 4. Nel progetto:
    - **Authentication** → Sign-in method → abilita **Email/Password**
    - **Firestore Database** → crea database (produzione), region es. `europe-west1`
-   - **Authentication** → Settings → **Authorized domains** → aggiungi `mbrp95.github.io` (inclusi i path Pages: repo legacy e `PianificatoreTurniOnline`)
+   - **Authentication** → Settings → **Authorized domains** → aggiungi `mbrp95.github.io` (inclusi i path Pages: repo legacy e `PianificatoreTurni`)
 5. **Project settings** → Your apps → Web app → copia la config
 
 ## 2. Config nel repo
