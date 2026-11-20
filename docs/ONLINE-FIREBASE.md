@@ -51,9 +51,9 @@ Hosting su GitHub Pages è già sufficiente; il deploy `hosting` Firebase è opz
 
 ## 4. Primo admin
 
-1. https://mbrp95.github.io/Pianificatore-Turni/bootstrap-admin.html  
+1. https://mbrp95.github.io/PianificatoreTurni/bootstrap-admin.html  
 2. Password ≥ 10 caratteri → crea `admin`  
-3. Login: https://mbrp95.github.io/Pianificatore-Turni/
+3. Login: https://mbrp95.github.io/PianificatoreTurni/
 
 Se avevi già provato il bootstrap **prima** di pubblicare le rules e aveva fallito, ripeti il bootstrap dopo il Publish.
 

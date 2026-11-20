@@ -1,8 +1,8 @@
 # Nuova repository pulita — Pianificatore Turni
 
 **Repository nuova:** https://github.com/MBRP95/PianificatoreTurni  
-**Repository originale (non eliminata):** https://github.com/MBRP95/Pianificatore-Turni  
-**Sito originale (ancora attivo finché il nuovo non è verificato):** https://mbrp95.github.io/Pianificatore-Turni/  
+**Repository legacy (private/archiviata, non pubblica):** `MBRP95/Pianificatore-Turni`  
+**Sito legacy Pages:** https://mbrp95.github.io/Pianificatore-Turni/ (**404** pubblico)  
 **Sito nuovo (dopo GitHub Pages):** https://mbrp95.github.io/PianificatoreTurni/
 
 ## Obiettivo
