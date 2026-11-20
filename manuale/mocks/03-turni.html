@@ -1,0 +1,28 @@
+<!DOCTYPE html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{--brand:#0176D3;--ink:#181818;--muted:#706E6B;--bg:#F3F2F2;--line:#E5E5E5;font-family:"IBM Plex Sans","Segoe UI",system-ui,sans-serif}
+*{box-sizing:border-box}body{margin:0;padding:12px;background:var(--bg);color:var(--ink)}
+.bar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;background:#fff;border:1px solid var(--line);padding:8px 12px;border-radius:8px;margin-bottom:10px}
+.tabs button,.months button{margin:2px;padding:7px 12px;border:1px solid var(--line);border-radius:6px;background:#fff;font:inherit;font-weight:650}
+.tabs button.on,.months button.on{background:var(--brand);color:#fff;border-color:var(--brand)}
+.btn.p{background:var(--brand);border-color:var(--brand);color:#fff;border:1px solid;border-radius:6px;padding:8px 12px;font-weight:650}
+h3{margin:10px 0}table{border-collapse:collapse;width:100%;background:#fff;font-size:12px}
+th,td{border:1px solid #d7dee6;padding:6px;text-align:center}th{background:#dfe5eb}
+td.n{text-align:left;font-weight:650;min-width:150px;background:#f7f8fa}
+.riposo{background:#C8E6C9}.ferie{background:#92D050}.note{display:block;margin-top:3px;font-size:10px;color:#4a5563}
+.fab{position:fixed;right:14px;bottom:14px;padding:6px 10px;border:1px solid var(--line);background:#fff;border-radius:6px;font-size:12px;font-weight:650;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+</style></head><body>
+<div class="bar"><div class="tabs"><button class="on" type="button">Turni</button><button type="button">Calcolo ferie / PAR</button><button type="button">Dipendenti</button></div>
+<button class="btn p" type="button">Esporta mese Excel (HR)</button></div>
+<div class="months"><button type="button">Gen</button><button type="button">Feb</button><button type="button">Mar</button><button type="button">Apr</button><button type="button">Mag</button><button type="button">Giu</button><button type="button">Lug</button><button type="button">Ago</button><button type="button">Set</button><button type="button">Ott</button><button class="on" type="button">Nov</button><button type="button">Dic</button></div>
+<h3>Novembre 2026 — Demo Store</h3>
+<table>
+<tr><th></th><th></th><th>LUN</th><th>MAR</th><th>MER</th><th>GIO</th><th>VEN</th><th>SAB</th><th>DOM</th><th>TOT</th></tr>
+<tr><th>RISORSA</th><th>STORE</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th><th>9</th><th></th></tr>
+<tr><td class="n">LUCA BIANCHI</td><td>DEMO</td><td class="riposo">RIPOSO</td><td>9 - 17</td><td>9 - 17</td><td>11.30 - 19.30</td><td class="riposo">RIPOSO</td><td>10 - 18</td><td class="ferie">FERIE</td><td></td></tr>
+<tr><td class="n">SARA NERI</td><td>DEMO</td><td>9 - 17</td><td class="riposo">RIPOSO</td><td>11.30 - 19.30</td><td>9 - 17</td><td>10 - 18</td><td class="riposo">RIPOSO</td><td>9 - 17</td><td></td></tr>
+<tr><td class="n">PAOLO VERDI</td><td>DEMO</td><td>11.30 - 19.30</td><td>9 - 17</td><td class="riposo">RIPOSO</td><td class="ferie">FERIE</td><td>9 - 17</td><td>11.30 - 19.30</td><td class="riposo">RIPOSO</td><td></td></tr>
+<tr><td class="n">ELENA CONTI</td><td>DEMO</td><td class="ferie">FERIE</td><td class="ferie">FERIE</td><td>9 - 17<span class="note">RITIRO DOC</span></td><td class="riposo">RIPOSO</td><td>11.30 - 19.30</td><td>9 - 17</td><td>10 - 18</td><td></td></tr>
+</table>
+<button class="fab" type="button">Export ore/giorno</button>
+</body></html>

@@ -1,0 +1,38 @@
+<!DOCTYPE html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{--brand:#0176D3;--brand-dark:#032D60;--ink:#181818;--muted:#706E6B;--line:#E5E5E5;--shadow:0 2px 4px rgba(0,0,0,.07);font-family:"Source Sans 3","Segoe UI",system-ui,sans-serif}
+*{box-sizing:border-box}body{margin:0}
+.shell{min-height:100vh;display:grid;grid-template-columns:minmax(280px,42%) 1fr}
+.brand{position:relative;overflow:hidden;color:#fff;padding:48px 40px;display:flex;flex-direction:column;justify-content:space-between;gap:32px;
+  background:radial-gradient(900px 480px at -10% -20%,rgba(1,118,211,.55),transparent 55%),radial-gradient(700px 420px at 110% 110%,rgba(1,118,211,.35),transparent 50%),linear-gradient(165deg,#021F46 0%,#032D60 42%,#014486 100%)}
+.brand::after{content:"";position:absolute;inset:auto -20% -30% 20%;height:70%;background:repeating-linear-gradient(-18deg,transparent 0 14px,rgba(255,255,255,.04) 14px 15px);pointer-events:none}
+.top,.copy,.foot{position:relative;z-index:1}
+.top{display:flex;align-items:center;gap:12px}
+.mark{width:36px;height:36px;border-radius:8px;background:var(--brand);display:grid;place-items:center}
+.mark svg{width:22px;height:22px}
+.copy h1{margin:0 0 12px;font-size:2rem;line-height:1.2}
+.copy p{margin:0;color:rgba(255,255,255,.82);line-height:1.55}
+.foot{font-size:.8rem;color:rgba(255,255,255,.55)}
+.pane{display:flex;align-items:center;justify-content:center;padding:40px 24px;background:#F3F2F2}
+.card{width:min(400px,100%);background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);padding:32px 28px 28px}
+.card h2{margin:0 0 6px;font-size:1.35rem;color:var(--brand-dark)}
+.card .sub{margin:0 0 22px;color:var(--muted)}
+label{display:block;font-size:.75rem;font-weight:700;color:var(--muted);margin:0 0 14px;text-transform:uppercase;letter-spacing:.04em}
+input{width:100%;margin-top:6px;border:1px solid #C9C7C5;border-radius:4px;padding:10px 12px;font:inherit}
+.btn{width:100%;margin-top:18px;border:0;background:var(--brand);color:#fff;border-radius:4px;padding:11px 14px;font:inherit;font-weight:650}
+</style></head><body>
+<div class="shell">
+  <aside class="brand">
+    <div class="top"><div class="mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="15" rx="2" fill="#fff"/><rect x="3" y="5" width="18" height="4" fill="#0176D3"/><rect x="6" y="12" width="4" height="3" fill="#0176D3"/><rect x="11" y="12" width="4" height="3" fill="#C9C7C5"/><rect x="16" y="12" width="3" height="3" fill="#C9C7C5"/></svg></div><strong>Pianificatore Turni</strong></div>
+    <div class="copy"><h1>Turni, ferie e PAR del punto vendita</h1><p>Pianifica la settimana, tieni i residui aggiornati e esporta quando serve.</p></div>
+    <div class="foot">Uso riservato agli store</div>
+  </aside>
+  <div class="pane"><div class="card">
+    <h2>Accedi</h2>
+    <p class="sub">Inserisci le credenziali del tuo punto vendita</p>
+    <label>Username<input value="store.demo01" readonly></label>
+    <label>Password<input type="password" value="demopass1" readonly></label>
+    <button class="btn" type="button">Entra</button>
+  </div></div>
+</div>
+</body></html>

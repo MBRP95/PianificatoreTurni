@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bootstrap admin — Pianificatore Turni</title>
+<link rel="icon" href="./favicon.svg" type="image/svg+xml">
+<style>
+body{font-family:system-ui,sans-serif;max-width:480px;margin:40px auto;padding:0 16px;line-height:1.45}
+label{display:block;margin:10px 0;font-weight:600}
+input{width:100%;padding:10px;margin-top:4px;box-sizing:border-box}
+button{margin-top:12px;padding:10px 14px;font-weight:700;cursor:pointer}
+.msg{margin-top:12px;color:#444}.err{color:#b00020}.ok{color:#0f6e56}
+code{background:#f3f3f3;padding:2px 5px;border-radius:4px}
+</style>
+</head>
+<body>
+<h1>Crea il primo admin</h1>
+<p>Una sola volta sul <b>progetto Firebase nuovo</b>. Username: <code>admin</code>.</p>
+<p class="msg">La password diventa la password di Firebase Authentication (non viene salvata in Firestore).</p>
+<label>Password iniziale (min. 10)<input id="pw" type="password" autocomplete="new-password"></label>
+<label>Conferma<input id="pw2" type="password" autocomplete="new-password"></label>
+<button type="button" id="go">Crea admin</button>
+<div class="msg" id="msg"></div>
+<p><a href="./index.html">← Torna al login</a></p>
+
+<script src="./js/firebase-config.js?v=4"></script>
+<script src="./js/auth.js?v=4"></script>
+<script type="module" src="./js/firebase-init.js?v=4"></script>
+<script>
+async function waitReady(){
+  if(window.firebaseReady||window.firebaseConfigMissing) return;
+  await new Promise(r=>window.addEventListener("firebase-ready",r,{once:true}));
+}
+document.getElementById("go").onclick=async()=>{
+  const msg=document.getElementById("msg");
+  msg.className="msg";
+  await waitReady();
+  if(window.firebaseConfigMissing){ msg.className="msg err"; msg.textContent="Configura prima firebase-config.js"; return; }
+  const pw=document.getElementById("pw").value, pw2=document.getElementById("pw2").value;
+  if(pw!==pw2){ msg.className="msg err"; msg.textContent="Le password non coincidono"; return; }
+  const api=window.firebaseApi;
+  try{
+    await TurniAuth.bootstrapAdmin(pw);
+    msg.className="msg ok";
+    msg.innerHTML="Admin creato. Username: <code>admin</code>. Vai al <a href='./index.html'>login</a> (al primo accesso cambierai la password).";
+  }catch(e){
+    try{ await api.signOut(api.auth); }catch(_){}
+    msg.className="msg err";
+    if(e?.message==="BOOTSTRAP_ALREADY_DONE"){
+      msg.innerHTML="Bootstrap già segnato in Firestore (<code>settings/initialized</code>), ma se in Authentication non ci sono utenti lo stato è incoerente.<br><br>In Firebase Console → <b>Firestore → Data</b> elimina il documento <code>settings/initialized</code> (e se ci sono anche eventuali <code>users</code> / <code>loginKeys</code> / <code>staffSecrets</code> orfani). Poi riprova qui.";
+      return;
+    }
+    const denied=e?.code==="permission-denied"||/insufficient permissions/i.test(String(e?.message||""));
+    msg.textContent=denied
+      ?"Regole Firestore non pubblicate. In Console → Firestore → Rules incolla firestore.rules del repo, Publish, poi riprova."
+      :"Errore: "+(e.message||e);
+  }
+};
+</script>
+</body>
+</html>

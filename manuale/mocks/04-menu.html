@@ -1,0 +1,24 @@
+<!DOCTYPE html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{--brand:#0176D3;--muted:#706E6B;--line:#E5E5E5;--neg:#BA0517;font-family:"IBM Plex Sans","Segoe UI",system-ui,sans-serif}
+*{box-sizing:border-box}body{margin:0;padding:48px;background:#e8eef4;color:#181818}
+.wrap{position:relative;width:360px}
+.cell{width:120px;height:56px;background:#fff;border:2px solid var(--brand);display:grid;place-items:center;font-size:12px;border-radius:4px}
+.menu{position:absolute;left:136px;top:0;width:220px;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 16px 40px rgba(0,0,0,.16);padding:6px;font-size:13px}
+.menu div{padding:9px 10px;border-radius:8px;font-weight:600}
+.menu .sep{height:1px;background:var(--line);margin:4px 0;padding:0}
+.danger{color:var(--neg)}
+p{margin-top:28px;color:var(--muted);max-width:420px;line-height:1.45}
+</style></head><body>
+<div class="wrap">
+  <div class="cell">9 - 17</div>
+  <div class="menu">
+    <div>⏱ Ore lavorate…</div><div>➕ PAR…</div><div>Allattamento…</div><div>Nota…</div>
+    <div class="sep"></div>
+    <div>RIPOSO</div><div>FERIE</div><div>FESTIVO</div><div>CONGEDO</div><div>MALATTIA</div><div>PERMESSO STUDIO</div>
+    <div class="sep"></div><div>FUORI SEDE</div>
+    <div class="sep"></div><div class="danger">Svuota</div>
+  </div>
+</div>
+<p>Clic su una cella: imposti orario, PAR, assenze o una nota libera.</p>
+</body></html>

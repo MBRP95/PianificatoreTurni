@@ -1,0 +1,2654 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pianificatore Turni</title>
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --ink:#181818; --muted:#706E6B; --bg:#F3F2F2; --panel:#fff; --line:#E5E5E5;
+  --accent:#0176D3; --accent-soft:#EAF5FE; --neg:#BA0517; --pos:#2E844A;
+  --shadow:0 10px 28px rgba(24,39,56,.07);
+  --grid-line:#d7dee6;
+  --head-wd:#dfe5eb;
+  --head-day:#eceff3;
+  --head-ink:#243040;
+  font-family:"IBM Plex Sans",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;color:var(--ink);background:radial-gradient(1000px 380px at 0% -10%,#d7ebe3 0%,transparent 55%),radial-gradient(900px 320px at 100% 0%,#dde7f5 0%,transparent 50%),var(--bg)}
+header{position:sticky;top:0;z-index:40;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:14px 18px}
+header .wrap{max-width:1500px;margin:0 auto;display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;justify-content:space-between}
+h1{margin:0;font-size:1.3rem;letter-spacing:-.02em;font-weight:700}
+.sub{margin:4px 0 0;color:var(--muted);font-size:.88rem}
+.actions,.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+button,.file-btn{appearance:none;border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:8px;padding:8px 12px;font:inherit;font-weight:650;cursor:pointer}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+button.ghost{background:transparent}
+button:hover{filter:brightness(.98)}
+button:disabled{opacity:.45;cursor:not-allowed;filter:none}
+.file-btn{display:inline-flex;align-items:center}
+.file-btn input{display:none}
+main{max-width:1500px;margin:0 auto;padding:14px 12px 48px;display:grid;gap:12px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:14px 16px}
+.panel h2{margin:0 0 10px;font-size:1.02rem}
+.main-tabs,#monthTabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.main-tabs button.active,#monthTabs button.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+#monthTabs button{min-width:52px}
+.hint{color:var(--muted);font-size:.85rem;line-height:1.45;margin:0 0 10px}
+.status{color:var(--muted);font-size:.84rem;margin-top:8px}
+.hidden{display:none!important}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:.84rem}
+.swatch{display:inline-flex;align-items:center;gap:7px}
+.swatch i{width:16px;height:16px;border-radius:4px;border:1px solid rgba(0,0,0,.12);display:inline-block}
+.week-block{margin-bottom:14px;overflow-x:auto;border:1px solid var(--line);border-radius:8px;background:#fff}
+table.turni{border-collapse:separate;border-spacing:0;width:100%;min-width:980px;font-size:.76rem}
+table.turni th,table.turni td{border-right:1px solid var(--grid-line);border-bottom:1px solid var(--grid-line);text-align:center;padding:5px 4px;min-width:88px}
+table.turni tr:first-child th{border-top:0}
+table.turni th:first-child,table.turni td:first-child{border-left:0}
+table.turni th:last-child,table.turni td:last-child{border-right:0}
+table.turni tr:last-child td{border-bottom:0}
+table.turni th.wd,table.turni tr.wd th{background:var(--head-wd);color:var(--head-ink);font-weight:700;font-size:.72rem;padding:7px 4px}
+table.turni tr.days th{background:var(--head-day);color:var(--head-ink);font-weight:700;font-size:.82rem;padding:6px 4px}
+table.turni tr.wd th.sun,table.turni tr.days th.sun{background:#d8dde4}
+table.turni th.label,table.turni td.label{text-align:left;min-width:190px;max-width:230px;background:#f7f8fa;font-weight:650;font-size:.7rem;padding-left:8px;position:sticky;left:0;z-index:2;box-shadow:1px 0 0 var(--grid-line)}
+table.turni th.storeh,table.turni td.store{min-width:90px;background:#f7f8fa;font-weight:650;font-size:.72rem;position:sticky;left:190px;z-index:2;box-shadow:1px 0 0 var(--grid-line)}
+table.turni td.cell{cursor:pointer;user-select:none;height:44px;min-height:44px;white-space:pre-line;line-height:1.15;vertical-align:middle}
+table.turni td.cell .strao{display:block;margin-top:2px;font-weight:800;font-size:.72em;color:#0b4f3d;letter-spacing:.02em}
+table.turni td.cell:hover{outline:2px solid rgba(15,110,86,.55);outline-offset:-2px}
+table.turni td.cell.selected{outline:2px solid #0b4f3d;outline-offset:-2px}
+table.turni td.cell.out,table.turni th.out{opacity:.45;cursor:default}
+table.turni td.cell.out:hover{outline:none}
+table.turni th.ot,table.turni td.ot-val{min-width:78px;background:#f4f6f8;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums}
+.summary,.people{width:100%;border-collapse:collapse;font-size:.86rem}
+.summary th,.summary td,.people th,.people td{border-bottom:1px solid var(--line);padding:8px 7px;text-align:left;white-space:nowrap}
+.summary th,.people th{color:var(--muted);font-size:.74rem;text-transform:uppercase;letter-spacing:.04em}
+.num{text-align:right!important;font-variant-numeric:tabular-nums}
+.neg{color:var(--neg);font-weight:700}
+.pos{color:var(--pos)}
+.people-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line);border-radius:10px;background:#fff}
+table.people{width:max-content;min-width:1080px;border-collapse:separate;border-spacing:0}
+.people th{white-space:normal;line-height:1.25;vertical-align:bottom;padding:10px 12px;max-width:140px}
+.people td{padding:10px 12px;vertical-align:middle}
+.people input{border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit;width:100%;min-width:0}
+.people input[data-f="name"]{min-width:160px}
+.people input[data-f="store"]{min-width:110px}
+.people input.num{width:100px;min-width:100px;text-align:right}
+.people input[type=date]{width:154px;min-width:154px}
+.people button[data-del]{white-space:nowrap;padding:8px 12px}
+body.cloud-embed main{max-width:none;padding:10px 10px 28px}
+body.cloud-embed header .wrap{max-width:none}
+.month-ferie{margin-bottom:18px}
+.month-ferie h3{margin:0 0 8px;font-size:.95rem}
+.field-wrap{display:inline-flex;align-items:center;gap:4px;justify-content:flex-end}
+.field-wrap input.mat-input{width:92px;border:1px solid var(--line);border-radius:6px;padding:5px 6px;font:inherit;text-align:right}
+.field-wrap input.mat-input.auto{background:#f4f7f9;color:var(--muted)}
+.field-wrap input.mat-input.manuale{background:#fff;border-color:#9bb7a8}
+button.mode-sw{min-width:28px;padding:4px 6px;font-size:.7rem;font-weight:800;letter-spacing:.02em;border-radius:6px}
+button.mode-sw.auto{background:var(--accent-soft);border-color:#b7d7cb;color:var(--accent)}
+button.mode-sw.manuale{background:#fff4e5;border-color:#e0c08a;color:#8a5a00}
+.fittizi-wrap{display:inline-flex;align-items:center;gap:6px;justify-content:flex-end}
+button.fittizi-sw{min-width:52px;padding:4px 8px;font-size:.7rem;font-weight:800;letter-spacing:.03em;border-radius:6px}
+button.fittizi-sw.si{background:#EAF5FE;border-color:#9dc3e6;color:#014486}
+button.fittizi-sw.no{background:#f4f6f8;border-color:#c9c7c5;color:#3e3e3c}
+button.fittizi-sw .fittizi-a{margin-left:4px;font-size:.65rem;opacity:.75;font-weight:700}
+.fittizi-liberi{font-size:.78rem;color:var(--muted);font-variant-numeric:tabular-nums}
+/* popover menu */
+#cellMenu{position:fixed;z-index:100;min-width:220px;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 16px 40px rgba(0,0,0,.16);padding:6px;display:none}
+#cellMenu.open{display:block}
+#cellMenu button{display:block;width:100%;text-align:left;border:0;background:transparent;border-radius:8px;padding:9px 10px;font-weight:600}
+#cellMenu button:hover{background:var(--accent-soft)}
+#cellMenu .sep{height:1px;background:var(--line);margin:4px 0}
+#cellMenu .danger{color:var(--neg)}
+table.turni td.cell .cell-note{
+  display:block;margin-top:3px;padding:0;border:0;border-radius:0;
+  font-size:.66rem;font-weight:500;font-style:normal;letter-spacing:0;
+  color:#4a5563;background:transparent;line-height:1.2;white-space:pre-wrap;text-align:center;
+}
+table.turni td.cell.note-only{background:#f7f8fa !important}
+/* modal */
+#modalBack{position:fixed;inset:0;background:rgba(20,30,40,.35);z-index:120;display:none;align-items:center;justify-content:center;padding:16px}
+#modalBack.open{display:flex}
+#modal{background:#fff;border-radius:14px;border:1px solid var(--line);padding:16px;width:min(420px,100%);box-shadow:var(--shadow)}
+#modal h3{margin:0 0 10px}
+#modal .row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+#modal label{font-size:.82rem;font-weight:700;color:var(--muted);display:block}
+#modal input,#modal select,#modal textarea{width:100%;margin-top:4px;border:1px solid var(--line);border-radius:8px;padding:9px 10px;font:inherit}
+#modal textarea{min-height:88px;resize:vertical}
+#modal .actions{justify-content:flex-end;margin-top:12px}
+#modal .err{color:var(--neg);font-size:.82rem;min-height:1.2em}
+@media(max-width:900px){
+  table.turni td.label,table.turni th.label{min-width:140px;left:0}
+  table.turni th.storeh,table.turni td.store{left:140px;min-width:84px}
+}
+/* Export ore lavorate (mese aperto) */
+#btnHoursExport{
+  position:fixed;right:14px;bottom:14px;z-index:50;
+  width:auto;min-width:0;padding:6px 10px;font-size:.75rem;font-weight:650;
+  border-radius:6px;box-shadow:0 2px 8px rgba(24,39,56,.12);
+  background:#fff;border:1px solid var(--line);color:var(--ink);
+}
+#btnHoursExport:hover{background:#f4f6f8;filter:none}
+body.cloud-embed #btnHoursExport{right:10px;bottom:10px}
+
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div>
+      <h1>Pianificatore Turni <span id="yearLabel">2026</span></h1>
+    </div>
+    <div class="actions">
+      <button class="primary" id="btnNewYear" title="Salva l'anno corrente, poi scegli una cartella OneDrive nuova per l'anno successivo (la vecchia non si cancella)">Nuovo anno →</button>
+    </div>
+  </div>
+</header>
+<main>
+  <section class="panel" id="archivePanel">
+    <h2 style="margin:0 0 8px">Archivio OneDrive</h2>
+    <div class="actions" style="margin-top:8px">
+      <button class="primary" id="chooseFolder" type="button">Seleziona cartella OneDrive</button>
+      <button id="loadArchive" type="button">Carica archivio</button>
+    </div>
+    <div class="status" id="folderStatus">Nessuna cartella selezionata. Clicca <b>Seleziona cartella OneDrive</b> oppure <b>Carica archivio</b> (aprirà la scelta cartella). I salvataggi vanno in dati/turni/.</div>
+  </section>
+
+  <section class="panel">
+    <div class="main-tabs">
+      <button type="button" data-tab="turni" class="active">Turni</button>
+      <button type="button" data-tab="ferie">Calcolo ferie / PAR</button>
+      <button type="button" data-tab="risorse">Dipendenti</button>
+    </div>
+  </section>
+
+  <section class="panel" id="view-turni">
+    <div class="toolbar" style="justify-content:space-between">
+      <h2 id="monthTitle" style="margin:0">Turni</h2>
+      <button class="primary" type="button" id="btnExport">Esporta mese Excel (HR)</button>
+    </div>
+    <div id="monthTabs"></div>
+    <div id="turniGrid"></div>
+    <div class="status" id="saveStatus"></div>
+  </section>
+
+  <section class="panel hidden" id="view-ferie">
+    <h2>Calcolo ferie e PAR — mese per mese</h2>
+    <p class="hint">Liberi fittizi = SI finché il mese non è tutto compilato per la risorsa (solo FERIE/PAR non bastano). NO automatico a mese completo. Puoi forzare SI/NO; la A indica automatico.</p>
+    <div id="ferieMonths"></div>
+    <h2 style="margin-top:8px">Riepilogo annuale</h2>
+    <div style="overflow-x:auto"><table class="summary" id="ferieYearTable"></table></div>
+  </section>
+
+  <section class="panel hidden" id="view-risorse">
+    <h2>Dipendenti</h2>
+    <div class="people-wrap"><table class="people" id="peopleTable"></table></div>
+    <div class="actions" style="margin-top:12px">
+      <button type="button" id="addPerson" class="primary">Aggiungi dipendente</button>
+    </div>
+  </section>
+</main>
+
+<div id="cellMenu" role="menu"></div>
+<div id="modalBack"><div id="modal"></div></div>
+<button type="button" id="btnHoursExport" title="Esporta Excel: riga 1 nomi risorse, poi ore lavorate per giorno (mese aperto)">Export ore/giorno</button>
+
+<script src="../vendor/exceljs.min.js"></script>
+<script>
+const SEED_TURNI = {"2026-01-01":{"GIULIA FERRARI":"FESTIVO","CHIARA ROMANO":"FESTIVO","MARTINA RICCI":"FESTIVO","ANDREA ESPOSITO":"FESTIVO"},"2026-01-02":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"FERIE","MARTINA RICCI":"FERIE","ANDREA ESPOSITO":"RIPOSO"},"2026-01-03":{"GIULIA FERRARI":"FERIE","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-01-04":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"11 - 19","ANDREA ESPOSITO":"11 - 19"},"2026-01-05":{"GIULIA FERRARI":"FERIE","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"11.30 - 19.30","ANDREA ESPOSITO":"9 - 17"},"2026-01-06":{"GIULIA FERRARI":"FESTIVO","CHIARA ROMANO":"FERIE","MARTINA RICCI":"11.30 - 19.30","ANDREA ESPOSITO":"9 - 17"},"2026-01-07":{"GIULIA FERRARI":"FERIE","CHIARA ROMANO":"11.30 - 19.30","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"9 - 17"},"2026-01-08":{"GIULIA FERRARI":"FERIE","CHIARA ROMANO":"11.30 - 19.30","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"RIPOSO"},"2026-01-09":{"GIULIA FERRARI":"FERIE","CHIARA ROMANO":"11.30 - 19.30","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"9 - 17"},"2026-01-10":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"11.30 - 20.00","ANDREA ESPOSITO":"9 - 17"},"2026-01-11":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"11 - 19","MARTINA RICCI":"11 - 19","ANDREA ESPOSITO":"RIPOSO"},"2026-01-12":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-01-13":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"9 - 17.30","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-01-14":{"GIULIA FERRARI":"13.30 - 19.30 + 2H ALLATT","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"9-17","ANDREA ESPOSITO":"RIPOSO"},"2026-01-15":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"9-17"},"2026-01-16":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"RIPOSO"},"2026-01-17":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"10 - 18"},"2026-01-18":{"GIULIA FERRARI":"11 - 19","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"11 - 19"},"2026-01-19":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"10 - 18","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"RIPOSO"},"2026-01-20":{"GIULIA FERRARI":"9 - 15 + 2H ALLATT","CHIARA ROMANO":"11.30 - 19.30","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"10 - 18"},"2026-01-21":{"GIULIA FERRARI":"9 - 15 + 2H ALLATT","CHIARA ROMANO":"8H PAR","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-01-22":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"11.30 - 19.30","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"10 - 18"},"2026-01-23":{"GIULIA FERRARI":"9 - 15 + 2H ALLATT","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"11.30 - 19.30","ANDREA ESPOSITO":"10 - 18"},"2026-01-24":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"10 - 18","ANDREA ESPOSITO":"9 - 17"},"2026-01-25":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"11 - 19","MARTINA RICCI":"11 - 19","ANDREA ESPOSITO":"RIPOSO"},"2026-01-26":{"GIULIA FERRARI":"9 - 15 + 2H ALLATT","CHIARA ROMANO":"10 - 18","MARTINA RICCI":"11.30 - 19.30","ANDREA ESPOSITO":"RIPOSO"},"2026-01-27":{"GIULIA FERRARI":"9 - 15 + 2H ALLATT","CHIARA ROMANO":"10 - 18","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-01-28":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"10 - 18","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-01-29":{"GIULIA FERRARI":"9 - 15 + 2H ALLATT","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"10 - 18","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-01-30":{"GIULIA FERRARI":"PERMESSO STUDIO","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-01-31":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"10 - 18"},"2026-02-01":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"RIPOSO"},"2026-02-02":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"10 - 18","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"RIPOSO"},"2026-02-03":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"11.30 - 19.30","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"9 - 17"},"2026-02-04":{"GIULIA FERRARI":"10 - 18","CHIARA ROMANO":"11.30 - 19.30","MARTINA RICCI":"10 - 18","ANDREA ESPOSITO":"9 - 18.30"},"2026-02-05":{"GIULIA FERRARI":"10 - 18","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"11.30 - 19.30","ANDREA ESPOSITO":"9 - 16 + 1H PAR"},"2026-02-06":{"GIULIA FERRARI":"10 - 18","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"11.30 - 19.30","ANDREA ESPOSITO":"9 - 17"},"2026-02-07":{"GIULIA FERRARI":"10 - 18","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"11.30 - 19.30","ANDREA ESPOSITO":"9 - 17"},"2026-02-08":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"RIPOSO"},"2026-02-09":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"10 - 18","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"RIPOSO"},"2026-02-10":{"GIULIA FERRARI":"9 - 15 + 2H ALLATT","CHIARA ROMANO":"8H PAR","MARTINA RICCI":"10 - 18","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-02-11":{"GIULIA FERRARI":"9 - 15 + 2H ALLATT","CHIARA ROMANO":"11.30 - 19.30","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"10 - 18"},"2026-02-12":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"11.30 - 19.30","MARTINA RICCI":"8H PAR","ANDREA ESPOSITO":"9 - 17"},"2026-02-13":{"GIULIA FERRARI":"9 - 15 + 2H ALLATT","CHIARA ROMANO":"11.30 - 19.30","MARTINA RICCI":"FERIE","ANDREA ESPOSITO":"10 - 18"},"2026-02-14":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"FERIE","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-02-15":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"RIPOSO"},"2026-02-16":{"GIULIA FERRARI":"9 - 15 + 2H ALLATT","CHIARA ROMANO":"11.30 - 19.30","MARTINA RICCI":"10 - 18","ANDREA ESPOSITO":"FERIE"},"2026-02-17":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"11.30 - 19.30","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"FERIE"},"2026-02-18":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"11.30 - 19.30","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"FERIE"},"2026-02-19":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"10.30 - 18.30","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"FERIE"},"2026-02-20":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"FERIE"},"2026-02-21":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"RIPOSO"},"2026-02-22":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"RIPOSO"},"2026-02-23":{"GIULIA FERRARI":"9 - 15 + 2H ALLATT","CHIARA ROMANO":"11.30 - 19.30","MARTINA RICCI":"10 - 18","ANDREA ESPOSITO":"RIPOSO"},"2026-02-24":{"GIULIA FERRARI":"9 - 15 + 2H ALLATT","CHIARA ROMANO":"11.30 - 19.30","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"10 - 18"},"2026-02-25":{"GIULIA FERRARI":"9 - 15 + 2H ALLATT","CHIARA ROMANO":"FERIE","MARTINA RICCI":"11.30 - 19.30","ANDREA ESPOSITO":"10 - 18"},"2026-02-26":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"FERIE","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-02-27":{"GIULIA FERRARI":"9 - 15 + 2H ALLATT","CHIARA ROMANO":"FERIE","MARTINA RICCI":"11.30 - 19.30","ANDREA ESPOSITO":"10 - 18"},"2026-02-28":{"GIULIA FERRARI":"10 - 18","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"11.30 - 19.30","ANDREA ESPOSITO":"9 - 17"},"2026-03-01":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"RIPOSO"},"2026-03-02":{"GIULIA FERRARI":"CONGEDO","CHIARA ROMANO":"11.30 - 19.30","MARTINA RICCI":"9-17","ANDREA ESPOSITO":"RIPOSO"},"2026-03-03":{"GIULIA FERRARI":"9 - 15 + 2H ALLATT","CHIARA ROMANO":"10 - 18","MARTINA RICCI":"10 - 18","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-03-04":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-03-05":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"FERIE","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-03-06":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"FERIE","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-03-07":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-03-08":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"RIPOSO"},"2026-03-09":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"11.30 - 19.30 + 1H PAR","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"10 - 18"},"2026-03-10":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"11.30 - 19.30","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"10 - 18"},"2026-03-11":{"GIULIA FERRARI":"9 - 15 + 2H ALLATT","CHIARA ROMANO":"10 - 18","MARTINA RICCI":"10 - 18","ANDREA ESPOSITO":"RIPOSO"},"2026-03-12":{"GIULIA FERRARI":"9 - 15 + 2H ALLATT","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"11.30 - 19.30","ANDREA ESPOSITO":"10 - 18"},"2026-03-13":{"GIULIA FERRARI":"9 - 15 + 2H ALLATT","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"11.30 - 19.30","ANDREA ESPOSITO":"10 - 18"},"2026-03-14":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"10 - 18"},"2026-03-15":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"RIPOSO"},"2026-03-16":{"GIULIA FERRARI":"10 - 18","CHIARA ROMANO":"11.30 - 19.30 + 1H PAR","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"RIPOSO"},"2026-03-17":{"GIULIA FERRARI":"9 - 15 + 2H ALLATT","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"10 - 18","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-03-18":{"GIULIA FERRARI":"9 - 13","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"10 - 18","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-03-19":{"GIULIA FERRARI":"CONGEDO","CHIARA ROMANO":"11.30 - 19.30 + 1H PAR","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"9 - 17"},"2026-03-20":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"RIPOSO"},"2026-03-21":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"11.30 - 19.30","ANDREA ESPOSITO":"9 - 17"},"2026-03-22":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"11 - 19","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"11 - 19"},"2026-03-23":{"GIULIA FERRARI":"FERIE","CHIARA ROMANO":"MALATTIA","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-03-24":{"GIULIA FERRARI":"8H PAR","CHIARA ROMANO":"11.30 - 19.30","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"RIPOSO"},"2026-03-25":{"GIULIA FERRARI":"8H PAR","CHIARA ROMANO":"11.30 - 19.30","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"9 - 17"},"2026-03-26":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-03-27":{"GIULIA FERRARI":"8H PAR","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-03-28":{"GIULIA FERRARI":"8H PAR","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-03-29":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"RIPOSO"},"2026-03-30":{"GIULIA FERRARI":"FERIE","CHIARA ROMANO":"11.30 - 19.30","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"RIPOSO"},"2026-03-31":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"10 - 18","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"12 - 20"},"2026-04-01":{"GIULIA FERRARI":"8H PAR","CHIARA ROMANO":"11.30 - 19.30","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"9 - 17"},"2026-04-02":{"GIULIA FERRARI":"FERIE","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"11.30 - 19.30","ANDREA ESPOSITO":"9 - 17"},"2026-04-03":{"GIULIA FERRARI":"FERIE","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"11.30 - 19.30","ANDREA ESPOSITO":"9 - 17"},"2026-04-04":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"11.30 - 19.30","ANDREA ESPOSITO":"9 - 17"},"2026-04-05":{"GIULIA FERRARI":"FESTIVO","CHIARA ROMANO":"FESTIVO","MARTINA RICCI":"FESTIVO","ANDREA ESPOSITO":"FESTIVO"},"2026-04-06":{"GIULIA FERRARI":"FESTIVO","CHIARA ROMANO":"FESTIVO","MARTINA RICCI":"FESTIVO","ANDREA ESPOSITO":"FESTIVO"},"2026-04-07":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"10.30 - 18.30","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-04-08":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"11.30 - 19.30","MARTINA RICCI":"8H PAR","ANDREA ESPOSITO":"RIPOSO"},"2026-04-09":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"FERIE","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-04-10":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"FERIE","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-04-11":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-04-12":{"GIULIA FERRARI":"11 - 19","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"11 - 19"},"2026-04-13":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"10.30 - 18.30","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"9 - 17"},"2026-04-14":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"10.30 - 18.30","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"9 - 17"},"2026-04-15":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"RIPOSO"},"2026-04-16":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"11.30 - 19.30","ANDREA ESPOSITO":"9 - 17"},"2026-04-17":{"GIULIA FERRARI":"10.30 - 18.30","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"11.30 - 19.30","ANDREA ESPOSITO":"9 - 17"},"2026-04-18":{"GIULIA FERRARI":"10.30 - 18.30","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"11.30 - 19.30","ANDREA ESPOSITO":"9 - 17"},"2026-04-19":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"11 - 19","MARTINA RICCI":"11 - 19","ANDREA ESPOSITO":"RIPOSO"},"2026-04-20":{"GIULIA FERRARI":"GITA","CHIARA ROMANO":"GITA","MARTINA RICCI":"GITA","ANDREA ESPOSITO":"GITA"},"2026-04-21":{"GIULIA FERRARI":"GITA","CHIARA ROMANO":"GITA","MARTINA RICCI":"GITA","ANDREA ESPOSITO":"GITA"},"2026-04-22":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"11.30 - 19.30","MARTINA RICCI":"11.30 - 19.30","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-04-23":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"10.30 - 18.30","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"9 - 17"},"2026-04-24":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"11.30 - 19.30","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"RIPOSO"},"2026-04-25":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-04-26":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"RIPOSO"},"2026-04-27":{"GIULIA FERRARI":"[object Object]","CHIARA ROMANO":"[object Object]","MARTINA RICCI":"[object Object]","ANDREA ESPOSITO":"[object Object]"},"2026-04-28":{"GIULIA FERRARI":"CONGEDO","CHIARA ROMANO":"FERIE","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"10.30 - 18.30"},"2026-04-29":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"FERIE","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"9 - 17"},"2026-04-30":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"FERIE","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-05-01":{"GIULIA FERRARI":"FESTIVO","CHIARA ROMANO":"FESTIVO","MARTINA RICCI":"FESTIVO","ANDREA ESPOSITO":"FESTIVO"},"2026-05-02":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"10.30 - 18.30","ANDREA ESPOSITO":"9 - 17"},"2026-05-03":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"RIPOSO"},"2026-05-04":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"10.30 - 18.30","MARTINA RICCI":"11.30 - 19.30","ANDREA ESPOSITO":"RIPOSO"},"2026-05-05":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"11.30 - 19.30","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"9 - 17"},"2026-05-06":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"10.30 - 18.30","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-05-07":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"10.30 - 18.30","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-05-08":{"GIULIA FERRARI":"9 - 16 + 1H PAR","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"10.30 - 18.30","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-05-09":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"10.30 - 18.30","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-05-10":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"RIPOSO"},"2026-05-11":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"11.30 - 19.30","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"FERIE"},"2026-05-12":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"10.30 - 18.30","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"FERIE"},"2026-05-13":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"11.30 - 19.30","ANDREA ESPOSITO":"FERIE"},"2026-05-14":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"FERIE"},"2026-05-15":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"11.30 - 19.30","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"FERIE"},"2026-05-16":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"RIPOSO"},"2026-05-17":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"RIPOSO"},"2026-05-18":{"GIULIA FERRARI":"8H PAR","CHIARA ROMANO":"11 - 19.30","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"RIPOSO"},"2026-05-19":{"GIULIA FERRARI":"MALATTIA","CHIARA ROMANO":"11.30 - 19.30","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"9 - 17"},"2026-05-20":{"GIULIA FERRARI":"MALATTIA","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"11.30 - 19.30","ANDREA ESPOSITO":"9 - 17"},"2026-05-21":{"GIULIA FERRARI":"MALATTIA","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"11.30 - 19.30","ANDREA ESPOSITO":"9 - 17"},"2026-05-22":{"GIULIA FERRARI":"10.30 - 18.30","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"11.30 - 19.30","ANDREA ESPOSITO":"9 - 17"},"2026-05-23":{"GIULIA FERRARI":"10.30 - 18.30","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"11.30 - 19.30","ANDREA ESPOSITO":"9 - 17"},"2026-05-24":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"RIPOSO"},"2026-05-25":{"GIULIA FERRARI":"[object Object]","CHIARA ROMANO":"[object Object]","MARTINA RICCI":"[object Object]","ANDREA ESPOSITO":"[object Object]"},"2026-05-26":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-05-27":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"10.30 - 18.30","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-05-28":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"11.30 - 19.30","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"RIPOSO"},"2026-05-29":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"11.30 - 19.30","MARTINA RICCI":"FERIE","ANDREA ESPOSITO":"9 - 17"},"2026-05-30":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"FERIE","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-05-31":{"GIULIA FERRARI":"10 - 18","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"10 - 18"},"2026-06-01":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"8H PAR","MARTINA RICCI":"FERIE","ANDREA ESPOSITO":"9 - 17 + 2H PAR"},"2026-06-02":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"9 - 17"},"2026-06-03":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"11 - 18.30 + 0.5H PAR","MARTINA RICCI":"11.30 - 19.30","ANDREA ESPOSITO":"RIPOSO"},"2026-06-04":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"11.30 - 19.30","ANDREA ESPOSITO":"9 - 17"},"2026-06-05":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"10.30 - 18.30","ANDREA ESPOSITO":"9 - 17"},"2026-06-06":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"10.30 - 18.30","ANDREA ESPOSITO":"9 - 17"},"2026-06-07":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"RIPOSO"},"2026-06-08":{"GIULIA FERRARI":"9 - 16 + 1H PAR","CHIARA ROMANO":"10.30 - 18.30","MARTINA RICCI":"11.30 - 19.30","ANDREA ESPOSITO":"RIPOSO"},"2026-06-09":{"GIULIA FERRARI":"PERMESSO STUDIO","CHIARA ROMANO":"10.30 - 18.30","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-06-10":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-06-11":{"GIULIA FERRARI":"9 - 16 + 1H PAR","CHIARA ROMANO":"11.30 - 20","MARTINA RICCI":"8H PAR","ANDREA ESPOSITO":"10.30 - 18.30"},"2026-06-12":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-06-13":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"11.30 - 19.30","ANDREA ESPOSITO":"10.30 - 18.30"},"2026-06-14":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"RIPOSO"},"2026-06-15":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"11.30 - 19.30","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"8H PAR"},"2026-06-16":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"8H PAR"},"2026-06-17":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"11.30 - 19.30","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"8H PAR"},"2026-06-18":{"GIULIA FERRARI":"15.30 - 19.30 + 4H PAR","CHIARA ROMANO":"10.30 - 18.30","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"8H PAR"},"2026-06-19":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"8H PAR"},"2026-06-20":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"RIPOSO"},"2026-06-21":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"RIPOSO"},"2026-06-22":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"8H PAR","MARTINA RICCI":"11.30 - 19.30","ANDREA ESPOSITO":"RIPOSO"},"2026-06-23":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"8H PAR","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-06-24":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"8H PAR","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-06-25":{"GIULIA FERRARI":"9 - 16 + 1H PAR","CHIARA ROMANO":"8H PAR","MARTINA RICCI":"10.30 - 18.30","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-06-26":{"GIULIA FERRARI":"9 - 16 + 1H PAR","CHIARA ROMANO":"8H PAR","MARTINA RICCI":"10.30 - 18.30","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-06-27":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"10.30 - 18.30","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-06-28":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"RIPOSO"},"2026-06-29":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"RIPOSO"},"2026-06-30":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-07-01":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"10.30 - 18.30","ANDREA ESPOSITO":"9 - 17"},"2026-07-02":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"8H PAR","ANDREA ESPOSITO":"9 - 17"},"2026-07-03":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"10.30 - 18.30","MARTINA RICCI":"8H PAR","ANDREA ESPOSITO":"9 - 17"},"2026-07-04":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"9 - 17"},"2026-07-05":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"RIPOSO"},"2026-07-06":{"GIULIA FERRARI":"PERMESSO STUDIO","CHIARA ROMANO":"11.30 - 19.30","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"9 - 17"},"2026-07-07":{"GIULIA FERRARI":"FERIE","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-07-08":{"GIULIA FERRARI":"8H PAR","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"11.30 - 19.30","ANDREA ESPOSITO":"9 - 17"},"2026-07-09":{"GIULIA FERRARI":"8H PAR","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-07-10":{"GIULIA FERRARI":"8H PAR","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-07-11":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-07-12":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"RIPOSO"},"2026-07-13":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"11.30 - 19.30","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"10.30-18.30"},"2026-07-14":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"11.30 - 19.30","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"10.30-18.30"},"2026-07-15":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"8H PAR"},"2026-07-16":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"11.30 - 19.30","ANDREA ESPOSITO":"8H PAR"},"2026-07-17":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"11.30 - 19.30","ANDREA ESPOSITO":"8H PAR"},"2026-07-18":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"11.30 - 19.30","ANDREA ESPOSITO":"RIPOSO"},"2026-07-19":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"RIPOSO"},"2026-07-20":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"11.30 - 19.30","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"RIPOSO"},"2026-07-21":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"FUORI SEDE"},"2026-07-22":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"8H PAR","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"FUORI SEDE"},"2026-07-23":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"8H PAR","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"9 - 17"},"2026-07-24":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"8H PAR","MARTINA RICCI":"8H PAR","ANDREA ESPOSITO":"9 - 17"},"2026-07-25":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"FERIE","ANDREA ESPOSITO":"9 - 17"},"2026-07-26":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"RIPOSO"},"2026-07-27":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"10.30 - 18.30","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"RIPOSO"},"2026-07-28":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"10.30 - 18.30"},"2026-07-29":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"11.30 - 19.30","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"10.30 - 18.30"},"2026-07-30":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"10.30 - 18.30","MARTINA RICCI":"10.00 - 16.00 + 2H PAR","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-07-31":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"9 - 17"},"2026-08-01":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"10.30-18.30","ANDREA ESPOSITO":"9 - 17"},"2026-08-02":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"RIPOSO"},"2026-08-03":{"GIULIA FERRARI":"8H PAR","CHIARA ROMANO":"11.30 - 19.30","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"8H PAR"},"2026-08-04":{"GIULIA FERRARI":"8H PAR","CHIARA ROMANO":"11.30 - 19.30","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"8H PAR"},"2026-08-05":{"GIULIA FERRARI":"8H PAR","CHIARA ROMANO":"11.30 - 19.30","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"8H PAR"},"2026-08-06":{"GIULIA FERRARI":"8H PAR","CHIARA ROMANO":"11.30 - 19.30","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"8H PAR"},"2026-08-07":{"GIULIA FERRARI":"8H PAR","CHIARA ROMANO":"11.30 - 19.30","MARTINA RICCI":"9 - 17.30","ANDREA ESPOSITO":"8H PAR"},"2026-08-08":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"RIPOSO"},"2026-08-09":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"RIPOSO"},"2026-08-15":{"GIULIA FERRARI":"FESTIVO","CHIARA ROMANO":"FESTIVO","MARTINA RICCI":"FESTIVO","ANDREA ESPOSITO":"FESTIVO"},"2026-08-17":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"RIPOSO"},"2026-08-18":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"FERIE","MARTINA RICCI":"8H PAR","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-08-19":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"FERIE","MARTINA RICCI":"8H PAR","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-08-20":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"FERIE","MARTINA RICCI":"8H PAR","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-08-21":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"FERIE","MARTINA RICCI":"8H PAR","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-08-22":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"FERIE","MARTINA RICCI":"8H PAR","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-08-23":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"RIPOSO"},"2026-08-24":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"10.30 - 18.30","MARTINA RICCI":"8H PAR","ANDREA ESPOSITO":"9 - 17"},"2026-08-25":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"RIPOSO"},"2026-08-26":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"10.30 - 18.30","MARTINA RICCI":"11.30 - 19.30","ANDREA ESPOSITO":"9 - 17"},"2026-08-27":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"10.30 - 18.30","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"9 - 17"},"2026-08-28":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"10.30 - 18.30","MARTINA RICCI":"10.30 - 18.30","ANDREA ESPOSITO":"9 - 17"},"2026-08-29":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"10.30 - 18.30","ANDREA ESPOSITO":"9 - 17"},"2026-08-30":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"RIPOSO"},"2026-08-31":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"10.30 - 18.30","MARTINA RICCI":"11.30 - 19.30","ANDREA ESPOSITO":"RIPOSO"},"2026-09-01":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-09-02":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-09-03":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-09-04":{"GIULIA FERRARI":"9 - 15:30 + 1.5H PAR","CHIARA ROMANO":"10.30 - 18.30","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"10.30 - 19.30"},"2026-09-05":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"11.30 - 19.30","ANDREA ESPOSITO":"10.30 - 18.30"},"2026-09-06":{"GIULIA FERRARI":"10 - 18","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"10 - 18","ANDREA ESPOSITO":"RIPOSO"},"2026-09-07":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"11.30 - 19.30","ANDREA ESPOSITO":"RIPOSO"},"2026-09-08":{"GIULIA FERRARI":"PERMESSO STUDIO","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"9 - 17.30","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-09-09":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"11.30 - 19.30","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"RIPOSO"},"2026-09-10":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"11.30 - 19.30","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"9 - 17"},"2026-09-11":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"9 - 17","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-09-12":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"10.30 - 18.30","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-09-13":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"10 - 18","ANDREA ESPOSITO":"10 - 18"},"2026-09-14":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"10.30 - 18.30","MARTINA RICCI":"11.30 - 19.30","ANDREA ESPOSITO":"9 - 17"},"2026-09-15":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"RIPOSO"},"2026-09-16":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"11.30 - 19.30","ANDREA ESPOSITO":"9 - 17"},"2026-09-17":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"10.30 - 18.30","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"RIPOSO"},"2026-09-18":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"10.30 - 18.30","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-09-19":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"10.30 - 18.30","ANDREA ESPOSITO":"9 - 17"},"2026-09-20":{"GIULIA FERRARI":"10 - 18","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"10 - 18"},"2026-09-21":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-09-22":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"10.30 - 18.30","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"RIPOSO"},"2026-09-23":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-09-24":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"11.30 - 19.30","ANDREA ESPOSITO":"RIPOSO"},"2026-09-25":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-09-26":{"GIULIA FERRARI":"8H PAR","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-09-27":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"10 - 18","ANDREA ESPOSITO":"10 - 18"},"2026-09-28":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"10.30 - 18.30","MARTINA RICCI":"11.30 - 19.30","ANDREA ESPOSITO":"RIPOSO"},"2026-09-29":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"11.30 - 19.30","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"10.30 - 18.30"},"2026-09-30":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-10-01":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"11.30 - 19.30","ANDREA ESPOSITO":"RIPOSO"},"2026-10-02":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"11.30 - 19.30","ANDREA ESPOSITO":"9 - 17"},"2026-10-03":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"11.30 - 19.30","ANDREA ESPOSITO":"10.30 - 18.30"},"2026-10-04":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"10 - 18","ANDREA ESPOSITO":"10 - 18"},"2026-10-05":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"10.30 - 18.30","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"RIPOSO"},"2026-10-06":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"10.30 - 18.30","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-10-07":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"9 - 17","MARTINA RICCI":"11.30 - 19.30","ANDREA ESPOSITO":"RIPOSO"},"2026-10-08":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"9 - 17.30","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-10-09":{"GIULIA FERRARI":"10.30 - 18.30","CHIARA ROMANO":"10.30 - 18.30","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"11 - 19.30"},"2026-10-10":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"9 - 17"},"2026-10-11":{"GIULIA FERRARI":"10 - 18","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"10 - 18"},"2026-10-12":{"GIULIA FERRARI":"11.30 - 20","CHIARA ROMANO":"10.30 - 18.30","MARTINA RICCI":"10.30 - 18.30","ANDREA ESPOSITO":"9 - 17"},"2026-10-13":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"10.30 - 18.30","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"10.30 - 18.30"},"2026-10-14":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"10.30 - 18.30","MARTINA RICCI":"11.30 - 19.30","ANDREA ESPOSITO":"9 - 17"},"2026-10-15":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"11.30 - 19.30","ANDREA ESPOSITO":"RIPOSO"},"2026-10-16":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"9 - 17"},"2026-10-17":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"10.30 - 18.30"},"2026-10-18":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"RIPOSO"},"2026-10-19":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"MALATTIA","MARTINA RICCI":"11.30 - 19.30","ANDREA ESPOSITO":"RIPOSO"},"2026-10-20":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"11.30 - 19.30","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"FUORI SEDE"},"2026-10-21":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-10-22":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"10.30 - 18.30","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-10-23":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"10.30 - 18.30","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-10-24":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"10.30 - 18.30","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-10-25":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"RIPOSO"},"2026-10-26":{"GIULIA FERRARI":"8H PAR","CHIARA ROMANO":"11.30 - 19.30","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"RIPOSO"},"2026-10-27":{"GIULIA FERRARI":"8H PAR","CHIARA ROMANO":"11.30 - 19.30","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"9 - 17"},"2026-10-28":{"GIULIA FERRARI":"FERIE","CHIARA ROMANO":"11.30 - 19.30","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"FUORI SEDE"},"2026-10-29":{"GIULIA FERRARI":"FERIE","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"11.30 - 19.30","ANDREA ESPOSITO":"9 - 17"},"2026-10-30":{"GIULIA FERRARI":"FERIE","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"11.30 - 19.30","ANDREA ESPOSITO":"9 - 17"},"2026-10-31":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-11-01":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"RIPOSO"},"2026-11-02":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"10.30 - 18.30","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"11.30 - 18.00 + 1.5H PAR"},"2026-11-03":{"GIULIA FERRARI":"10.30 - 18.30","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"MALATTIA"},"2026-11-04":{"GIULIA FERRARI":"8H PAR","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"9 - 17.30","ANDREA ESPOSITO":"MALATTIA"},"2026-11-05":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"MALATTIA"},"2026-11-06":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"11.30 - 19.30","MARTINA RICCI":"FERIE","ANDREA ESPOSITO":"MALATTIA"},"2026-11-07":{"GIULIA FERRARI":"11.30 - 19.30","CHIARA ROMANO":"9 - 13","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"MALATTIA"},"2026-11-08":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"RIPOSO"},"2026-11-09":{"GIULIA FERRARI":"9 - 17","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"11.30 - 19.30","ANDREA ESPOSITO":"RIPOSO"},"2026-11-10":{"GIULIA FERRARI":"INVENTARIO","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"INVENTARIO","ANDREA ESPOSITO":"INVENTARIO"},"2026-11-11":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"10.30 - 18.30","MARTINA RICCI":"11.30 - 19.30","ANDREA ESPOSITO":"9 - 17"},"2026-11-12":{"GIULIA FERRARI":"10.30 - 18.30","CHIARA ROMANO":"11.30 - 19.30","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"9 - 17"},"2026-11-13":{"GIULIA FERRARI":"10.30 - 18.30","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-11-14":{"GIULIA FERRARI":"10.30 - 18.30","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"9 - 17","ANDREA ESPOSITO":"11.30 - 19.30"},"2026-11-15":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"RIPOSO"},"2026-11-16":{"GIULIA FERRARI":"FERIE","CHIARA ROMANO":"10 - 18","MARTINA RICCI":"10 - 18","ANDREA ESPOSITO":"10 - 18"},"2026-11-17":{"GIULIA FERRARI":"FERIE","CHIARA ROMANO":"10 - 18","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"MALATTIA"},"2026-11-18":{"GIULIA FERRARI":"FERIE","CHIARA ROMANO":"10 - 18","MARTINA RICCI":"10 - 18","ANDREA ESPOSITO":"MALATTIA"},"2026-11-19":{"GIULIA FERRARI":"10 - 18","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"10 - 18","ANDREA ESPOSITO":"MALATTIA"},"2026-11-20":{"GIULIA FERRARI":"FERIE","CHIARA ROMANO":"10 - 18","MARTINA RICCI":"10 - 18","ANDREA ESPOSITO":"MALATTIA"},"2026-11-21":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"FERIE"},"2026-11-22":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"RIPOSO"},"2026-11-23":{"GIULIA FERRARI":"10 - 18","CHIARA ROMANO":"10 - 18","MARTINA RICCI":"10 - 18","ANDREA ESPOSITO":"RIPOSO"},"2026-11-24":{"GIULIA FERRARI":"10 - 18","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"10 - 18","ANDREA ESPOSITO":"10 - 18"},"2026-11-25":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"10 - 18","MARTINA RICCI":"10 - 18","ANDREA ESPOSITO":"10 - 18"},"2026-11-26":{"GIULIA FERRARI":"10 - 18","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"10 - 18","ANDREA ESPOSITO":"10 - 18"},"2026-11-27":{"GIULIA FERRARI":"10 - 18","CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"FERIE","ANDREA ESPOSITO":"10 - 18"},"2026-11-28":{"GIULIA FERRARI":"10 - 18","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"10 - 18"},"2026-11-29":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"RIPOSO"},"2026-11-30":{"GIULIA FERRARI":"[object Object]","CHIARA ROMANO":"[object Object]","MARTINA RICCI":"[object Object]","ANDREA ESPOSITO":"[object Object]"},"2026-12-02":{"GIULIA FERRARI":"RIPOSO","MARTINA RICCI":"8H PAR"},"2026-12-06":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"RIPOSO"},"2026-12-07":{"GIULIA FERRARI":"8H PAR","CHIARA ROMANO":"8H PAR"},"2026-12-08":{"GIULIA FERRARI":"FESTIVO","CHIARA ROMANO":"FESTIVO"},"2026-12-09":{"GIULIA FERRARI":"8H PAR","CHIARA ROMANO":"8H PAR"},"2026-12-10":{"GIULIA FERRARI":"8H PAR"},"2026-12-11":{"GIULIA FERRARI":"FERIE"},"2026-12-12":{"GIULIA FERRARI":"RIPOSO"},"2026-12-13":{"GIULIA FERRARI":"RIPOSO"},"2026-12-20":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"RIPOSO"},"2026-12-25":{"GIULIA FERRARI":"FESTIVO","CHIARA ROMANO":"FESTIVO","MARTINA RICCI":"FESTIVO","ANDREA ESPOSITO":"FESTIVO"},"2026-12-26":{"GIULIA FERRARI":"FESTIVO","CHIARA ROMANO":"FESTIVO","MARTINA RICCI":"FESTIVO","ANDREA ESPOSITO":"FESTIVO"},"2026-12-27":{"GIULIA FERRARI":"RIPOSO","CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"RIPOSO","ANDREA ESPOSITO":"RIPOSO"},"2026-12-28":{"GIULIA FERRARI":"[object Object]","CHIARA ROMANO":"[object Object]","MARTINA RICCI":"[object Object]","ANDREA ESPOSITO":"[object Object]"},"2026-12-29":{"GIULIA FERRARI":"FERIE"},"2026-12-30":{"GIULIA FERRARI":"FERIE"},"2026-12-31":{"GIULIA FERRARI":"8H PAR","CHIARA ROMANO":"RIPOSO"},"2026-12-03":{"CHIARA ROMANO":"FUORI SEDE","MARTINA RICCI":"8H PAR"},"2026-12-18":{"CHIARA ROMANO":"FERIE","ANDREA ESPOSITO":"FERIE"},"2026-12-19":{"CHIARA ROMANO":"RIPOSO","ANDREA ESPOSITO":"RIPOSO"},"2026-12-21":{"CHIARA ROMANO":"FERIE","MARTINA RICCI":"RIPOSO"},"2026-12-22":{"CHIARA ROMANO":"FERIE","MARTINA RICCI":"FERIE"},"2026-12-23":{"CHIARA ROMANO":"FERIE","MARTINA RICCI":"FERIE"},"2026-12-24":{"CHIARA ROMANO":"RIPOSO","MARTINA RICCI":"FERIE"},"2026-12-01":{"MARTINA RICCI":"8H PAR"},"2026-12-04":{"MARTINA RICCI":"RIPOSO"},"2026-12-14":{"ANDREA ESPOSITO":"FERIE"},"2026-12-15":{"ANDREA ESPOSITO":"FERIE"},"2026-12-16":{"ANDREA ESPOSITO":"FERIE"},"2026-12-17":{"ANDREA ESPOSITO":"FERIE"}};
+
+/** 2026: valori Excel/busta fino a ottobre (campi manuali). Anni nuovi: oggetti vuoti → tutto auto. */
+const SEED_MATURATO = {"p1": {"1": {"ferie": 13.539, "par": 8.8}, "2": {"ferie": 25.847, "par": 16.8}, "3": {"ferie": 38.77, "par": 25.2}, "4": {"ferie": 51.27, "par": 33.6}, "5": {"ferie": 64.193, "par": 42.0}, "6": {"ferie": 76.693, "par": 50.4}, "7": {"ferie": 89.616, "par": 60.801}, "8": {"ferie": 105.848, "par": 68.801}, "9": {"ferie": 120.00174, "par": 78.001}, "10": {"ferie": 133.5401, "par": 86.801}}, "p3": {"1": {"ferie": 13.539, "par": 8.8}, "2": {"ferie": 25.847, "par": 16.8}, "3": {"ferie": 38.77, "par": 25.2}, "4": {"ferie": 53.539, "par": 34.801}, "5": {"ferie": 66.462, "par": 43.201}, "6": {"ferie": 76.693, "par": 50.4}, "7": {"ferie": 93.54, "par": 60.801}, "8": {"ferie": 105.233, "par": 68.401}, "9": {"ferie": 117.5406, "par": 76.401}, "10": {"ferie": 132.9251, "par": 86.401}}, "p4": {"1": {"ferie": 13.539, "par": 8.8}, "2": {"ferie": 25.847, "par": 16.8}, "3": {"ferie": 38.77, "par": 25.2}, "4": {"ferie": 52.924, "par": 36.852}, "5": {"ferie": 66.463, "par": 43.201}, "6": {"ferie": 76.693, "par": 50.4}, "7": {"ferie": 93.54, "par": 60.807}, "8": {"ferie": 106.002, "par": 68.901}, "9": {"ferie": 119.54036, "par": 77.701}, "10": {"ferie": 133.6941, "par": 86.901}}};
+const SEED_GODUTO = {"p1": {"1": {"ferie": 40, "par": 0}, "2": {"ferie": 40, "par": 0}, "3": {"ferie": 56, "par": 32}, "4": {"ferie": 72, "par": 40}, "5": {"ferie": 72, "par": 49}, "6": {"ferie": 72, "par": 57}, "7": {"ferie": 80, "par": 81}, "8": {"ferie": 112, "par": 121}, "9": {"ferie": 112, "par": 130.5}, "10": {"ferie": 136, "par": 146.5}}, "p3": {"1": {"ferie": 8, "par": 0}, "2": {"ferie": 24, "par": 9.5}, "3": {"ferie": 40, "par": 9.5}, "4": {"ferie": 56, "par": 17.5}, "5": {"ferie": 72, "par": 17.5}, "6": {"ferie": 80, "par": 25.5}, "7": {"ferie": 88, "par": 51.5}, "8": {"ferie": 120, "par": 75.5}, "9": {"ferie": 120, "par": 75.5}, "10": {"ferie": 120, "par": 75.5}}, "p4": {"1": {"ferie": 0, "par": 8}, "2": {"ferie": 40, "par": 9}, "3": {"ferie": 40, "par": 9}, "4": {"ferie": 40, "par": 9}, "5": {"ferie": 80, "par": 9}, "6": {"ferie": 80, "par": 51}, "7": {"ferie": 80, "par": 75}, "8": {"ferie": 122.5, "par": 98.5}, "9": {"ferie": 122.5, "par": 98.5}, "10": {"ferie": 122.5, "par": 106.5}}};
+
+const DEFAULT_YEAR = 2026;
+const MONTHS = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
+const MONTHS_UPPER = MONTHS.map(m => m.toUpperCase());
+const WEEKDAYS = ["LUNEDI","MARTEDI","MERCOLEDI","GIOVEDI","VENERDI","SABATO","DOMENICA"];
+const FERIE_DAY_RATE = 0.61538;
+const PAR_DAY_RATE = 0.4;
+const DAY_CAP = 8;
+const LEGACY_CITIES = ["VERONA","BOLOGNA","PADOVA","MILANO","ROMA","GENOVA","MODENA"];
+const FUORI_SEDE = "FUORI SEDE";
+const KINDS = ["RIPOSO","FERIE","FESTIVO","CONGEDO","MALATTIA","PERMESSO STUDIO", FUORI_SEDE];
+
+const ACTIVE_YEAR_KEY = "pianificatore-turni-active-year-v12";
+const ACTIVE_ARCHIVE_KEY = "pianificatore-turni-active-archive-v12";
+const _qs=new URLSearchParams(location.search);
+const CLOUD_MODE=_qs.get("cloud")==="1";
+const CLOUD_SHOP_ID=(_qs.get("shopId")||"").trim();
+const CLOUD_SHOP_NAME=(_qs.get("shopName")||"").trim();
+const CLOUD_YEAR=Number(_qs.get("year"))||null;
+function isYearOnlyToken(s){
+  return !String(s||"").trim() || /^\d+$/.test(String(s).trim()) || /^20\d{2}$/.test(String(s).trim());
+}
+function normalizeArchiveId(id){
+  let s=String(id||"modena").trim().toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
+  // evita id tipo "2026" (nome cartella = solo anno)
+  if(!s || isYearOnlyToken(s)) s="modena";
+  return s;
+}
+/** Rimuove anni (20xx) dal nome cartella/etichetta — l'anno è già nello yearLabel. */
+function stripYearsFromLabel(s){
+  return String(s||"").replace(/\b20\d{2}\b/g," ").replace(/[-_/]+/g," ").replace(/\s+/g," ").trim();
+}
+function titleCaseWords(s){
+  return String(s||"").toLowerCase().replace(/(^|[\s-])([a-zà-ú])/g,(_,a,b)=>a+b.toUpperCase());
+}
+function storesHint(st){
+  const stores=[...new Set((st?.people||[]).map(p=>String(p.store||"").trim()).filter(Boolean))];
+  if(stores.length===1) return titleCaseWords(stores[0]);
+  if(stores.length>1){
+    const roots=[...new Set(stores.map(s=>s.split(/\s+/)[0]).filter(Boolean))];
+    if(roots.length===1) return titleCaseWords(roots[0]);
+  }
+  return "";
+}
+/**
+ * Etichetta archivio per header (es. "Modena", non "2026" né "Modena 2026").
+ * Se il JSON ha salvato solo l'anno, ricava lo store / archiveId.
+ */
+function resolveArchiveLabel(st=state){
+  const fromStores=storesHint(st);
+  const raw=stripYearsFromLabel(st?.archiveLabel || "");
+  if(raw && !isYearOnlyToken(raw)) return titleCaseWords(raw);
+  if(fromStores) return fromStores;
+  const id=normalizeArchiveId(st?.archiveId || "modena");
+  if(id==="modena") return "Modena";
+  const fromId=titleCaseWords(id.replace(/-/g," "));
+  return isYearOnlyToken(fromId) ? (fromStores || "Modena") : fromId;
+}
+function getArchiveId(st=state){ return normalizeArchiveId(st?.archiveId || getActiveArchivePref() || "modena"); }
+function setActiveArchive(id){
+  try{ localStorage.setItem(ACTIVE_ARCHIVE_KEY, normalizeArchiveId(id)); }catch(_){}
+}
+function getActiveArchivePref(){
+  try{
+    const v=localStorage.getItem(ACTIVE_ARCHIVE_KEY);
+    return v? normalizeArchiveId(v) : null;
+  }catch(_){ return null; }
+}
+function storageKey(year, archive){
+  return `pianificatore-turni-${normalizeArchiveId(archive ?? getArchiveId())}-${Number(year)||DEFAULT_YEAR}-v12`;
+}
+function setActiveYear(year){
+  try{ localStorage.setItem(ACTIVE_YEAR_KEY, String(Number(year)||DEFAULT_YEAR)); }catch(_){}
+}
+function getActiveYearPref(){
+  try{
+    const y=Number(localStorage.getItem(ACTIVE_YEAR_KEY));
+    if(y>=DEFAULT_YEAR && y<DEFAULT_YEAR+50) return y;
+  }catch(_){}
+  return null;
+}
+/** Se nel 2026 Modena mancano i valori Excel/busta (fino a ottobre), li applica come campi manuali. */
+function ensureSeedBalances(st){
+  if(!st) return st;
+  if(!st.liberiFittizi || typeof st.liberiFittizi!=="object") st.liberiFittizi={};
+  if(Number(st.year)!==DEFAULT_YEAR) return st;
+  if(normalizeArchiveId(st.archiveId||"modena")!=="modena") return st;
+  if(!st.maturato || typeof st.maturato!=="object") st.maturato={};
+  if(!st.goduto || typeof st.goduto!=="object") st.goduto={};
+  let changed=false;
+  for(const [pid, months] of Object.entries(SEED_MATURATO)){
+    if(!st.maturato[pid]) st.maturato[pid]={};
+    for(const [m, vals] of Object.entries(months)){
+      const cur=st.maturato[pid][m];
+      if(cur && (cur.ferie!=null || cur.par!=null)) continue;
+      st.maturato[pid][m]={ ferie: vals.ferie, par: vals.par };
+      changed=true;
+    }
+  }
+  for(const [pid, months] of Object.entries(SEED_GODUTO)){
+    if(!st.goduto[pid]) st.goduto[pid]={};
+    for(const [m, vals] of Object.entries(months)){
+      const cur=st.goduto[pid][m];
+      if(cur && (cur.ferie!=null || cur.par!=null)) continue;
+      st.goduto[pid][m]={ ferie: vals.ferie, par: vals.par };
+      changed=true;
+    }
+  }
+  if(changed) st.updatedAt=new Date().toISOString();
+  return st;
+}
+function easterDate(y){
+  // Anonymous Gregorian algorithm
+  const a=y%19, b=Math.floor(y/100), c=y%100, d=Math.floor(b/4), e=b%4;
+  const f=Math.floor((b+8)/25), g=Math.floor((b-f+1)/3), h=(19*a+b-d-g+15)%30;
+  const i=Math.floor(c/4), k=c%4, l=(32+2*e+2*i-h-k)%7, m=Math.floor((a+11*h+22*l)/451);
+  const month=Math.floor((h+l-7*m+114)/31), day=((h+l-7*m+114)%31)+1;
+  return new Date(y, month-1, day);
+}
+/** Patroni locali per store (oltre alle festività nazionali). */
+const STORE_PATRON = {
+  MODENA: [[1,31]] // San Geminiano
+};
+function italianHolidays(year, store){
+  const e=easterDate(year);
+  const easterMon=new Date(e); easterMon.setDate(e.getDate()+1);
+  const fixed=[[1,1],[1,6],[4,25],[5,1],[6,2],[8,15],[11,1],[12,8],[12,25],[12,26]];
+  const patrons=STORE_PATRON[String(store||"").trim().toUpperCase()]||[];
+  for(const pd of patrons) fixed.push(pd);
+  const set=new Set(fixed.map(([m,d])=>`${year}-${pad(m)}-${pad(d)}`));
+  set.add(iso(e)); set.add(iso(easterMon));
+  return set;
+}
+function getYear(){ return Number(state?.year)||DEFAULT_YEAR; }
+function getHolidays(store){ return italianHolidays(getYear(), store); }
+
+const COLORS = {
+  header:"AEAAAA", daynum:"BFBFBF", white:"FFFFFF", ferie:"92D050", par:"FFFF00", allatt:"FFC000",
+  riposo:"C8E6C9", festivo:"FF6B6B", congedo:"FFC000", store:"BDD7EE", work:"FFFFFF", empty:"F7F7F7"
+};
+
+
+const NAME_ALIASES = {
+  "GIULIA":"GIULIA FERRARI",
+  "CHIARA":"CHIARA ROMANO",
+  "MARTINA":"MARTINA RICCI",
+  "ANDREA":"ANDREA ESPOSITO",
+  "GIULIA FERRARI":"GIULIA FERRARI",
+  "CHIARA ROMANO":"CHIARA ROMANO",
+  "MARTINA RICCI":"MARTINA RICCI",
+  "ANDREA ESPOSITO":"ANDREA ESPOSITO"
+};
+function resolvePersonName(name){
+  const u=String(name||"").trim().toUpperCase();
+  if(NAME_ALIASES[u]) return NAME_ALIASES[u];
+  // partial match on first token / known surnames
+  for(const [k,v] of Object.entries(NAME_ALIASES)){
+    if(u===k || u.includes(k) || k.includes(u)) return v;
+  }
+  return String(name||"").trim();
+}
+
+
+
+const DEFAULT_PEOPLE = [
+  { id:"p1", name:"GIULIA FERRARI", store:"MODENA", hoursWeek:40, startDate:"2026-01-01", ferieRes:71.966, parRes:103.709 },
+  { id:"p2", name:"CHIARA ROMANO", store:"MODENA", hoursWeek:40, startDate:"2026-01-01", ferieRes:0, parRes:0 },
+  { id:"p3", name:"MARTINA RICCI", store:"MODENA", hoursWeek:40, startDate:"2026-01-01", ferieRes:24.888, parRes:13.906 },
+  { id:"p4", name:"ANDREA ESPOSITO", store:"MODENA", hoursWeek:40, startDate:"2026-01-01", ferieRes:29.308, parRes:36.852 }
+];
+
+function pad(n){ return String(n).padStart(2,"0"); }
+function iso(d){ if(typeof d==="string") return d; return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
+function daysInMonth(y,m){ return new Date(y,m,0).getDate(); }
+function round3(n){ return Math.round((n+Number.EPSILON)*1000)/1000; }
+function fmt(n){ if(n==null||Number.isNaN(n)) return "—"; return round3(n).toLocaleString("it-IT",{maximumFractionDigits:3}); }
+function escapeHtml(s){ return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c])); }
+function isHoliday(ds, store){ return getHolidays(store).has(ds); }
+function peopleSorted(){
+  return state.people.slice().sort((a,b)=>{
+    const sa=String(a.store||"").localeCompare(String(b.store||""),"it",{sensitivity:"base"});
+    if(sa) return sa;
+    return String(a.name||"").localeCompare(String(b.name||""),"it",{sensitivity:"base"});
+  });
+}
+function isSunday(ds){ return new Date(ds+"T12:00:00").getDay()===0; }
+
+function weeksForMonth(year, month){
+  const first=new Date(year,month-1,1);
+  const start=new Date(first); start.setDate(first.getDate()-((first.getDay()+6)%7));
+  const last=new Date(year,month-1,daysInMonth(year,month));
+  const end=new Date(last); end.setDate(last.getDate()+(6-((last.getDay()+6)%7)));
+  const weeks=[];
+  for(let cur=new Date(start); cur<=end; cur.setDate(cur.getDate()+7)){
+    const week=[];
+    for(let i=0;i<7;i++){ const d=new Date(cur); d.setDate(cur.getDate()+i); week.push(new Date(d)); }
+    weeks.push(week);
+  }
+  return weeks;
+}
+
+function parseTimeToHours(token){
+  token=String(token).trim().replace(",",".");
+  if(/^\d{1,2}$/.test(token)) return Number(token);
+  const m=token.match(/^(\d{1,2})(?:[.:](\d{2}))?$/);
+  if(!m) return null;
+  return Number(m[1])+(m[2]?Number(m[2])/60:0);
+}
+function formatTime(h){
+  const hh=Math.floor(h); const mm=Math.round((h-hh)*60);
+  return mm? `${hh}.${String(mm).padStart(2,"0")}` : String(hh);
+}
+function hoursFromRange(val){
+  if(!val) return 0;
+  const m=String(val).trim().match(/^(\d{1,2}(?:[.:]\d{2})?)\s*[-–]\s*(\d{1,2}(?:[.:]\d{2})?)$/);
+  if(!m) return 0;
+  const a=parseTimeToHours(m[1]), b=parseTimeToHours(m[2]);
+  if(a==null||b==null||b<=a) return 0;
+  return round3(b-a);
+}
+
+/** True se il kind è nella lista ufficiale (o città legacy = fuori sede). */
+function isKnownKind(kind){
+  const u=String(kind||"").trim().toUpperCase();
+  if(!u) return false;
+  if(KINDS.includes(u)) return true;
+  if(LEGACY_CITIES.includes(u)) return true;
+  return false;
+}
+
+/** Se kind non è in lista, spostalo in note (Modena/Verona: testo libero tipo "RITIRO DOC…"). */
+function coerceUnknownKindToNote(entry){
+  const e=entry&&typeof entry==="object" ? entry : emptyEntry();
+  let kind=e.kind!=null && String(e.kind).trim() ? String(e.kind).trim() : null;
+  let note=e.note!=null && String(e.note).trim() ? String(e.note).trim() : null;
+  if(kind && !isKnownKind(kind)){
+    note = note ? (note.toUpperCase().includes(kind.toUpperCase()) ? note : `${note} · ${kind}`) : kind;
+    kind = null;
+  }
+  return {
+    work: e.work||null,
+    par: e.par!=null&&e.par!==""?Number(e.par):null,
+    allatt: e.allatt!=null&&e.allatt!==""?Number(e.allatt):null,
+    kind,
+    straordinario: e.straordinario!=null&&e.straordinario!==""?Number(e.straordinario):null,
+    note
+  };
+}
+
+/** Normalize any stored value to {work,par,allatt,kind,note} */
+function normalizeEntry(raw){
+  if(raw==null||raw==="") return emptyEntry();
+  if(typeof raw==="object" && !Array.isArray(raw)){
+    return coerceUnknownKindToNote({
+      work: raw.work||null,
+      par: raw.par!=null?Number(raw.par):null,
+      allatt: raw.allatt!=null?Number(raw.allatt):null,
+      kind: raw.kind||null,
+      straordinario: raw.straordinario!=null&&raw.straordinario!==""?Number(raw.straordinario):null,
+      note: raw.note!=null && String(raw.note).trim() ? String(raw.note).trim() : null
+    });
+  }
+  let s=String(raw).trim();
+  if(!s) return emptyEntry();
+  // normalize decimal commas in times: 10,30 -> 10.30
+  s=s.replace(/(\d),(\d{2})\b/g,"$1.$2");
+  const u=s.toUpperCase();
+  if(u==="LIB"||u==="LIBERO"||u.startsWith("LIBERO ")) return { work:null, par:null, allatt:null, kind:"RIPOSO", note:null };
+
+  // Allattamento (riposi art. 39) — non è PAR
+  if(u==="ALLATT"||u==="ALLATTAMENTO"||u.startsWith("ALLATTAMENTO")) return { work:null, par:null, allatt:8, kind:null, note:null };
+  let allattOnly=u.match(/^(\d+(?:[.,]\d+)?)\s*H\s*ALLATT(?:AMENTO)?$/);
+  if(allattOnly) return { work:null, par:null, allatt:Number(allattOnly[1].replace(",",".")), kind:null, note:null };
+  let allattCombo=s.match(/^(.+?)\s*[+|]\s*(\d+(?:[.,]\d+)?)\s*H\s*ALLATT(?:AMENTO)?$/i);
+  if(allattCombo) return { work:allattCombo[1].trim(), par:null, allatt:Number(allattCombo[2].replace(",",".")), kind:null, note:null };
+  allattCombo=s.match(/^(\d{1,2}(?:[.:]\d{2})?)\s*[-–]\s*(\d{1,2}(?:[.:]\d{2})?)\s*\(?\s*(\d+(?:[.,]\d+)?)\s*(?:H\s*|ORE\s*)?ALLATT(?:AMENTO)?(?:[^)]*)\)?$/i);
+  if(allattCombo) return { work:`${allattCombo[1]} - ${allattCombo[2]}`, par:null, allatt:Number(allattCombo[3].replace(",",".")), kind:null, note:null };
+
+  if(u==="PAR") return { work:null, par:8, allatt:null, kind:null, note:null };
+
+  // Turno + PAR (anche poco PAR): "9 - 16 (1PAR)", "9-16(1 par)", "9 - 16 + 1H PAR", "9 - 16 + 1PAR", "10 - 16.30 1.30 PAR"
+  // Importante: catturare PRIMA dei match "solo PAR", altrimenti resta solo il permesso.
+  let combo=s.match(/^(\d{1,2}(?:[.:]\d{2})?)\s*[-–]\s*(\d{1,2}(?:[.:]\d{2})?)\s*(?:[+|\/]\s*)?\(?\s*(\d+(?:[.,]\d+)?)\s*(?:H\s*|ORE\s*)?PAR(?:[^)]*)\)?\s*$/i);
+  if(combo){
+    const work=`${combo[1]} - ${combo[2]}`;
+    if(hoursFromRange(work)>0){
+      return { work, par:Number(String(combo[3]).replace(",",".")), allatt:null, kind:null, note:null };
+    }
+  }
+  // "9 - 13 + 4H PAR" / "9 - 13 | 1 PAR" con testo libero a sinistra (range già validato sopra per casi semplici)
+  combo=s.match(/^(.+?)\s*[+|\/]\s*(\d+(?:[.,]\d+)?)\s*(?:H\s*|ORE\s*)?PAR\s*$/i);
+  if(combo){
+    const work=combo[1].trim().replace(/\s*[-–]\s*/," - ");
+    if(hoursFromRange(work)>0){
+      return { work, par:Number(String(combo[2]).replace(",",".")), allatt:null, kind:null, note:null };
+    }
+  }
+  // solo PAR intera giornata / ore
+  let par=u.match(/^(\d+(?:[.,]\d+)?)\s*H\s*PAR$/);
+  if(par) return { work:null, par:Number(par[1].replace(",",".")), allatt:null, kind:null, note:null };
+  par=u.match(/^(\d+(?:[.,]\d+)?)\s*PAR$/);
+  if(par) return { work:null, par:Number(par[1].replace(",",".")), allatt:null, kind:null, note:null };
+  if(u==="FERIE"||u.startsWith("FERIE")) return { work:null, par:null, allatt:null, kind:"FERIE", note:null };
+  if(u==="RIPOSO") return { work:null, par:null, allatt:null, kind:"RIPOSO", note:null };
+  if(u==="FESTIVO"||u.startsWith("FESTIVO")) return { work:null, par:null, allatt:null, kind:"FESTIVO", note:null };
+  if(u.includes("CONGEDO") && !/^\d/.test(u)) return { work:null, par:null, allatt:null, kind:"CONGEDO", note:null };
+  // permesso studio (non allattamento)
+  if(u.includes("PERMESSO STUDIO")||u==="PAR STUDIO") return { work:null, par:null, allatt:null, kind:"PERMESSO STUDIO", note:null };
+  if(u.includes("ALLATT")) return { work:null, par:null, allatt:8, kind:null, note:null };
+  if(u.includes("PERMESSO")||u==="PAR STUDIO") return { work:null, par:null, allatt:null, kind:"PERMESSO STUDIO", note:null };
+  if(u.startsWith("MALATTIA")) return { work:null, par:null, allatt:null, kind:"MALATTIA", note:null };
+  if(u==="FUORI SEDE"||u.startsWith("FUORI SEDE")) return { work:null, par:null, allatt:null, kind:FUORI_SEDE, note:null };
+  for(const st of LEGACY_CITIES){ if(u===st || u.startsWith(st+" ")) return { work:null, par:null, allatt:null, kind:FUORI_SEDE, note:null }; }
+  // Orario + nota tra parentesi: "9 - 17 (RITIRO DOC)" → work + note
+  const workNote=s.match(/^(\d{1,2}(?:[.:]\d{2})?\s*[-–]\s*\d{1,2}(?:[.:]\d{2})?)\s*\(([^)]+)\)\s*$/);
+  if(workNote){
+    const work=workNote[1].replace(/\s*[-–]\s*/," - ").trim();
+    if(hoursFromRange(work)>0){
+      return { work, par:null, allatt:null, kind:null, note:workNote[2].trim() };
+    }
+  }
+  // strip trailing notes in parentheses for plain ranges
+  const plain=s.replace(/\s*\([^)]*\)\s*$/,"").trim();
+  if(hoursFromRange(plain)>0) return { work:plain, par:null, allatt:null, kind:null, note:null };
+  if(hoursFromRange(s)>0) return { work:s, par:null, allatt:null, kind:null, note:null };
+  // Testo fuori lista (es. "RITIRO DOC E ARREDI 7") → nota, non tipo turno
+  return { work:null, par:null, allatt:null, kind:null, note:s };
+}
+function emptyEntry(){ return { work:null, par:null, allatt:null, kind:null, straordinario:null, note:null }; }
+function isEmptyEntry(e){ e=normalizeEntry(e); return !e.work && !e.par && !e.allatt && !e.kind && !e.note; }
+function entryWorkHours(e){
+  e=normalizeEntry(e);
+  if(e.kind===FUORI_SEDE || (e.kind && LEGACY_CITIES.includes(e.kind))) return 8;
+  if(e.work) return hoursFromRange(e.work);
+  return 0;
+}
+function entryParHours(e){ e=normalizeEntry(e); return e.par||0; }
+function entryAllattHours(e){ e=normalizeEntry(e); return e.allatt||0; }
+function entryOccupiedHours(e){ return entryWorkHours(e)+entryParHours(e)+entryAllattHours(e); }
+function entryFerieDay(e){ return normalizeEntry(e).kind==="FERIE"?1:0; }
+function entryIsRiposo(e){ return normalizeEntry(e).kind==="RIPOSO"; }
+function entryStrao(e){ e=normalizeEntry(e); return e.straordinario>0?Number(e.straordinario):0; }
+
+/** Seed p1 fino a marzo 2026: i 2H "PAR" accanto al turno erano riposi allattamento, non PAR. */
+function maybeConvertAllattamento(entry, personId, ds, personName){
+  const e=normalizeEntry(entry);
+  if(e.allatt || e.kind) return e;
+  if(!e.par || !e.work) return e;
+  const person=DEFAULT_PEOPLE.find(p=>p.id===personId);
+  const name=String(personName||(person&&person.name)||"").toUpperCase();
+  // Solo risorsa seed p1 (demo): 2h PAR + turno fino a mar 2026 → allattamento
+  const isAllattSeed = personId==="p1";
+  if(!isAllattSeed) return e;
+  if(!ds || ds > "2026-03-31") return e;
+  if(Number(e.par)!==2) return e;
+  return { work:e.work, par:null, allatt:2, kind:null, straordinario:e.straordinario||null };
+}
+
+function displayEntry(e){
+  e=normalizeEntry(e);
+  if(e.kind) return e.kind;
+  const parts=[];
+  if(e.work) parts.push(e.work);
+  if(e.allatt) parts.push(`${String(e.allatt).replace(".",",")}H ALLATT`);
+  if(e.par) parts.push(`${String(e.par).replace(".",",")}H PAR`);
+  return parts.join("\n");
+}
+function formatCellHtml(e, dayOt){
+  e=normalizeEntry(e);
+  const lines=[];
+  if(e.kind) lines.push(escapeHtml(e.kind));
+  else {
+    if(e.work) lines.push(escapeHtml(e.work));
+    if(e.allatt) lines.push(escapeHtml(`${String(e.allatt).replace(".",",")}H ALLATT`));
+    if(e.par) lines.push(escapeHtml(`${String(e.par).replace(".",",")}H PAR`));
+  }
+  const ot=dayOt>0?dayOt:entryStrao(e);
+  if(ot>0) lines.push(`<span class="strao">STRAO ${fmt(ot)}</span>`);
+  if(e.note) lines.push(`<span class="cell-note">${escapeHtml(e.note)}</span>`);
+  return lines.join("<br>") || "";
+}
+function exportEntryText(e){
+  e=normalizeEntry(e);
+  // la nota è solo UI interna: non va nell'export HR
+  if(e.kind) return e.kind;
+  const parts=[];
+  if(e.work) parts.push(e.work);
+  if(e.allatt) parts.push(`${e.allatt}H ALLATT`);
+  if(e.par) parts.push(`${e.par}H PAR`);
+  if(e.straordinario>0) parts.push(`STRAO ${e.straordinario}`);
+  return parts.join(" + ");
+}
+function colorForEntry(e, ds, store){
+  e=normalizeEntry(e);
+  if(e.kind==="FERIE") return COLORS.ferie;
+  if(e.kind==="RIPOSO") return COLORS.riposo;
+  if(e.kind==="FESTIVO") return COLORS.festivo;
+  if(e.kind==="CONGEDO"||e.kind==="PERMESSO STUDIO"||e.kind==="MALATTIA") return COLORS.congedo;
+  if(e.kind===FUORI_SEDE || (e.kind && LEGACY_CITIES.includes(e.kind))) return COLORS.store;
+  if(e.allatt && !e.par) return COLORS.allatt;
+  if(e.par && !e.work) return COLORS.par;
+  if(e.work && e.par) return COLORS.par;
+  if(e.work) return COLORS.work;
+  if(isHoliday(ds, store)) return COLORS.festivo;
+  if(isSunday(ds)) return COLORS.riposo;
+  return COLORS.white;
+}
+
+function buildDefaultTurni(){
+  const byName={}; for(const p of DEFAULT_PEOPLE) byName[p.name]=p.id;
+  const cal={}; for(const p of DEFAULT_PEOPLE) cal[p.id]={};
+  for(const [ds, map] of Object.entries(SEED_TURNI)){
+    for(const [name,val] of Object.entries(map)){
+      const id=byName[name]; if(!id) continue;
+      cal[id][ds]=maybeConvertAllattamento(normalizeEntry(val), id, ds);
+    }
+  }
+  return cal;
+}
+function defaultState(year=DEFAULT_YEAR){
+  return {
+    year,
+    archiveId: "modena",
+    archiveLabel: "Modena",
+    people: JSON.parse(JSON.stringify(DEFAULT_PEOPLE)).map(p => ({
+      ...p,
+      startDate: p.startDate || `${year}-01-01`,
+      endDate: p.endDate || ""
+    })),
+    turni: year===DEFAULT_YEAR ? buildDefaultTurni() : {},
+    maturato: year===DEFAULT_YEAR ? JSON.parse(JSON.stringify(SEED_MATURATO)) : {},
+    goduto: year===DEFAULT_YEAR ? JSON.parse(JSON.stringify(SEED_GODUTO)) : {},
+    liberiFittizi: {},
+    updatedAt: new Date().toISOString()
+  };
+}
+function normalizePerson(p, year){
+  return {
+    id: p.id || ("p"+Math.random().toString(36).slice(2,9)),
+    name: p.name || "NUOVO DIPENDENTE",
+    store: p.store!=null ? String(p.store).trim() : "",
+    hoursWeek: Number(p.hoursWeek)||40,
+    startDate: p.startDate || `${year}-01-01`,
+    endDate: p.endDate || "",
+    ferieRes: Number(p.ferieRes)||0,
+    parRes: Number(p.parRes)||0
+  };
+}
+/** Data inizio effettiva: da qui partono turni e maturazione ferie/PAR. */
+function personEmploymentStart(person, year=getYear()){
+  const y=Number(year)||getYear();
+  const s=person && person.startDate ? String(person.startDate).trim() : "";
+  return s || `${y}-01-01`;
+}
+function personEmploymentEnd(person){
+  const e=person && person.endDate ? String(person.endDate).trim() : "";
+  return e || "";
+}
+function personActiveOn(person, ds){
+  const start=personEmploymentStart(person);
+  if(ds < start) return false;
+  const end=personEmploymentEnd(person);
+  if(end && ds > end) return false;
+  return true;
+}
+/** Presente in almeno un giorno del mese (nuovi ingressi / uscite). */
+function personActiveInMonth(person, year, month){
+  const y=Number(year)||getYear();
+  const m=Number(month);
+  const monthStart=`${y}-${pad(m)}-01`;
+  const monthEnd=`${y}-${pad(m)}-${pad(daysInMonth(y,m))}`;
+  const start=personEmploymentStart(person, y);
+  if(start > monthEnd) return false;
+  const end=personEmploymentEnd(person);
+  if(end && end < monthStart) return false;
+  return true;
+}
+function personActiveInYear(person, year=getYear()){
+  const y=Number(year)||getYear();
+  const start=personEmploymentStart(person, y);
+  if(start > `${y}-12-31`) return false;
+  const end=personEmploymentEnd(person);
+  if(end && end < `${y}-01-01`) return false;
+  return true;
+}
+function peopleForMonth(year=getYear(), month=currentMonth){
+  return peopleSorted().filter(p=>personActiveInMonth(p, year, month));
+}
+function emptyCloudState(year, shopId, shopName){
+  const id=normalizeArchiveId(shopId || "negozio");
+  return {
+    year: Number(year)||DEFAULT_YEAR,
+    archiveId: id,
+    archiveLabel: shopName || id,
+    people: [],
+    turni: {},
+    maturato: {},
+    goduto: {},
+    liberiFittizi: {},
+    updatedAt: new Date().toISOString()
+  };
+}
+
+/** True se questo negozio cloud è Modena (id storico "modena" o codice store mb020). */
+function isModenaShopIdOrName(shopId, shopName){
+  const rawId=String(shopId||"").trim().toLowerCase();
+  const sid=normalizeArchiveId(shopId||"");
+  const name=String(shopName||"").trim().toLowerCase();
+  if(sid==="modena" || rawId==="modena" || sid==="mb020" || rawId==="mb020") return true;
+  if(sid.includes("modena") || rawId.includes("modena") || name==="modena" || name.includes("modena")) return true;
+  return false;
+}
+
+/** Archivio cloud chiaramente del seed Modena mentre siamo su un altro negozio. */
+function isWrongShopCloudArchive(st, shopId, shopName){
+  const people=st?.people||[];
+  if(!people.length) return false;
+  const sid=normalizeArchiveId(shopId||"");
+  // Modena (anche mb020) può legittimamente avere il seed p1–p4
+  if(!sid || isModenaShopIdOrName(shopId, shopName)) return false;
+  const defaultIds=people.every(p=>/^p[1-4]$/.test(String(p.id||"")));
+  const stores=people.map(p=>String(p.store||"").trim().toUpperCase());
+  const allModena=stores.every(s=>!s || s==="MODENA");
+  const label=String(shopName||"").toUpperCase();
+  const shopLooksVerona=/VERONA/.test(label) || sid==="mb081" || sid.includes("verona") || /^mb(?!020$)/i.test(sid);
+  if(defaultIds) return true;
+  if(shopLooksVerona && allModena) return true;
+  if(allModena && !isModenaShopIdOrName(shopId, shopName) && !stores.some(s=>s.includes(sid.toUpperCase()))) return true;
+  return false;
+}
+
+function loadState(){
+  try{
+    // Cloud: mai ripescare Modena da localStorage — lo stato viene da Firestore.
+    if(CLOUD_MODE){
+      const year=CLOUD_YEAR || getActiveYearPref() || DEFAULT_YEAR;
+      return emptyCloudState(year, CLOUD_SHOP_ID, CLOUD_SHOP_NAME);
+    }
+    // Riprendi ultimo archivio+anno usati (cartelle separate: Modena, Verona, …).
+    let archive=getActiveArchivePref() || "modena";
+    let year=getActiveYearPref() || DEFAULT_YEAR;
+    let raw=localStorage.getItem(storageKey(year, archive));
+    if(!raw){
+      // compat: vecchia chiave solo-modena
+      raw=localStorage.getItem(`pianificatore-turni-modena-${year}-v12`);
+      if(raw) archive="modena";
+    }
+    if(!raw){
+      raw=localStorage.getItem(storageKey(DEFAULT_YEAR, "modena"));
+      year=DEFAULT_YEAR; archive="modena";
+    }
+    if(!raw) return defaultState(year);
+    const p=JSON.parse(raw);
+    if(!p.people||!p.turni) return defaultState(year);
+    p.year=Number(p.year)||year;
+    p.archiveId=normalizeArchiveId(p.archiveId || archive);
+    p.archiveLabel=resolveArchiveLabel(p);
+    p.maturato=p.maturato&&typeof p.maturato==="object"?p.maturato:{};
+    p.goduto=p.goduto&&typeof p.goduto==="object"?p.goduto:{};
+    p.liberiFittizi=p.liberiFittizi&&typeof p.liberiFittizi==="object"?p.liberiFittizi:{};
+    p.people=p.people.map(x=>normalizePerson(x, p.year));
+    for(const id of Object.keys(p.turni)){
+      for(const ds of Object.keys(p.turni[id]||{})){
+        p.turni[id][ds]=normalizeEntry(p.turni[id][ds]);
+      }
+    }
+    setActiveYear(p.year);
+    setActiveArchive(p.archiveId);
+    return ensureSeedBalances(p);
+  }catch{ return CLOUD_MODE ? emptyCloudState(CLOUD_YEAR||DEFAULT_YEAR, CLOUD_SHOP_ID, CLOUD_SHOP_NAME) : defaultState(); }
+}
+
+let state=loadState();
+let currentMonth = Math.min(12, Math.max(1, new Date().getFullYear()===getYear() ? new Date().getMonth()+1 : 1));
+let menuCtx=null; // {personId, ds, x, y}
+let folderHandle=null;
+
+function yearStateFilename(year){ return `pianificatore-turni-${year}.json`; }
+async function ensureDir(parent, name){ return parent.getDirectoryHandle(name, { create:true }); }
+async function writeJson(dir, name, data){
+  const fh=await dir.getFileHandle(name, { create:true });
+  const w=await fh.createWritable();
+  await w.write(JSON.stringify(data, null, 2));
+  await w.close();
+}
+async function readJson(dir, name, fallback){
+  try{
+    const fh=await dir.getFileHandle(name);
+    return JSON.parse(await (await fh.getFile()).text());
+  }catch(e){ return fallback; }
+}
+async function getTurniDir(create=true){
+  if(!folderHandle) throw new Error("Nessuna cartella selezionata");
+  const dati=await ensureDir(folderHandle, "dati");
+  return ensureDir(dati, "turni");
+}
+async function getDocumentiDir(create=true){
+  if(!folderHandle) throw new Error("Nessuna cartella selezionata");
+  return ensureDir(folderHandle, "documenti");
+}
+function setFolderStatus(msg){
+  const el=document.getElementById("folderStatus");
+  if(el) el.textContent=msg;
+}
+function hydrateStateFromObject(parsed, folderName){
+  if(!parsed || !parsed.people || !parsed.turni) throw new Error("JSON non valido");
+  const year=Number(parsed.year)||DEFAULT_YEAR;
+  parsed.year=year;
+  const fromFolder=folderName? normalizeArchiveId(stripYearsFromLabel(folderName)) : null;
+  parsed.archiveId=normalizeArchiveId(parsed.archiveId || fromFolder || "modena");
+  if(folderName && (!parsed.archiveLabel || /^\d+$/.test(stripYearsFromLabel(parsed.archiveLabel)))){
+    parsed.archiveLabel=stripYearsFromLabel(folderName) || parsed.archiveLabel;
+  }
+  parsed.maturato=parsed.maturato&&typeof parsed.maturato==="object"?parsed.maturato:{};
+  parsed.goduto=parsed.goduto&&typeof parsed.goduto==="object"?parsed.goduto:{};
+  parsed.liberiFittizi=parsed.liberiFittizi&&typeof parsed.liberiFittizi==="object"?parsed.liberiFittizi:{};
+  parsed.people=parsed.people.map(x=>normalizePerson(x, year));
+  for(const id of Object.keys(parsed.turni)){
+    for(const ds of Object.keys(parsed.turni[id]||{})){
+      parsed.turni[id][ds]=normalizeEntry(parsed.turni[id][ds]);
+    }
+  }
+  parsed.archiveLabel=resolveArchiveLabel(parsed);
+  return ensureSeedBalances(parsed);
+}
+async function ensureArchiveFolders(){
+  for(const d of ["dati","documenti","backup"]) await ensureDir(folderHandle, d);
+  await ensureDir(await ensureDir(folderHandle,"dati"), "turni");
+}
+async function chooseFolder(opts={}){
+  const { loadAfter=true } = opts;
+  if(!("showDirectoryPicker" in window)){
+    const msg="Selezione cartella non supportata: apri la pagina con Microsoft Edge o Google Chrome (non da file:// se possibile; usa un server locale).";
+    setFolderStatus(msg);
+    alert(msg);
+    return false;
+  }
+  try{
+    folderHandle=await window.showDirectoryPicker({ mode:"readwrite" });
+    if(await folderHandle.requestPermission({ mode:"readwrite" })!=="granted"){
+      throw new Error("Permesso di scrittura non concesso");
+    }
+    await ensureArchiveFolders();
+    setFolderStatus(`Cartella selezionata: ${folderHandle.name}. Archivio locale pronto.`);
+    if(loadAfter) await loadArchive({ skipChoose:true });
+    return true;
+  }catch(e){
+    if(e && e.name==="AbortError"){
+      setFolderStatus("Selezione cartella annullata.");
+      return false;
+    }
+    setFolderStatus("Cartella non selezionata o accesso negato: "+e.message);
+    alert("Cartella non selezionata o accesso negato: "+e.message);
+    return false;
+  }
+}
+/** Cerca un JSON di stato in dati/turni, dati/, backup/ o radice cartella.
+ *  Preferisce il file dell'anno nella cartella (modello 1 cartella = 1 anno),
+ *  non l'anno attualmente in memoria. */
+async function findArchiveJson(){
+  const active=getActiveYearPref() || getYear();
+  const candidates=[]; // {dir, name, year, label}
+
+  async function scanDir(dir, label){
+    if(!dir) return;
+    try{
+      for await (const [name,h] of dir.entries()){
+        if(h.kind!=="file" || !/\.json$/i.test(name)) continue;
+        const m=name.match(/^pianificatore-turni-(\d{4})(?:[-_].*)?\.json$/i);
+        if(!m && !/pianificatore-turni/i.test(name)) continue;
+        const y=m?Number(m[1]):null;
+        candidates.push({ dir, name, year:y, label });
+      }
+    }catch(_){ /* ignore */ }
+  }
+
+  const tdir=await getTurniDir();
+  await scanDir(tdir, "dati/turni");
+  try{ await scanDir(await folderHandle.getDirectoryHandle("dati"), "dati"); }catch(_){}
+  try{ await scanDir(await folderHandle.getDirectoryHandle("backup"), "backup"); }catch(_){}
+  await scanDir(folderHandle, "radice");
+
+  const inTurni=candidates.filter(c=>c.label==="dati/turni" && c.year);
+  let hit=null;
+  if(inTurni.length===1) hit=inTurni[0];
+  else if(inTurni.length>1){
+    hit=inTurni.find(c=>c.year===active) || inTurni.slice().sort((a,b)=>b.year-a.year)[0];
+  }
+  if(!hit){
+    hit=candidates.find(c=>c.year===active) || null;
+  }
+  if(!hit && candidates.length){
+    candidates.sort((a,b)=>(b.year||0)-(a.year||0));
+    hit=candidates[0];
+  }
+  if(!hit) return null;
+  const data=await readJson(hit.dir, hit.name, null);
+  if(!data) return null;
+  return { data, name:hit.name, label:hit.label };
+}
+async function loadArchive(opts={}){
+  const { skipChoose=false } = opts;
+  try{
+    if(!folderHandle){
+      if(skipChoose){
+        alert("Seleziona prima la cartella OneDrive.");
+        return;
+      }
+      // Un solo click: apre la cartella e poi carica
+      const ok=await chooseFolder({ loadAfter:false });
+      if(!ok || !folderHandle) return;
+    }else{
+      // rinnova permesso se scaduto (dopo reload della pagina il handle non resta, ma se resta in sessione…)
+      try{
+        const perm=await folderHandle.queryPermission({ mode:"readwrite" });
+        if(perm!=="granted"){
+          const req=await folderHandle.requestPermission({ mode:"readwrite" });
+          if(req!=="granted") throw new Error("Permesso di scrittura non concesso");
+        }
+      }catch(e){
+        // handle non più valido → ripeti scelta
+        folderHandle=null;
+        const ok=await chooseFolder({ loadAfter:false });
+        if(!ok || !folderHandle) return;
+      }
+    }
+
+    setFolderStatus("Caricamento archivio in corso…");
+    await ensureArchiveFolders();
+    const found=await findArchiveJson();
+    if(found && found.data){
+      state=hydrateStateFromObject(found.data, folderHandle?.name);
+      state.archiveId=getArchiveId(state);
+      state.archiveLabel=resolveArchiveLabel(state);
+      setActiveYear(getYear());
+      setActiveArchive(getArchiveId());
+      currentMonth=Math.min(12, Math.max(1, new Date().getFullYear()===getYear()? new Date().getMonth()+1 : 1));
+      localStorage.setItem(storageKey(getYear()), JSON.stringify(state));
+      // riallinea anche il file canonico in dati/turni (riscrive archiveLabel corretto)
+      try{ await saveStateToFolder(); }catch(_){}
+      renderAll();
+      const msg=`Archivio caricato: ${found.label}/${found.name} · ${resolveArchiveLabel(state)} · anno ${getYear()} · ${state.people.length} dipendenti · aggiornato ${state.updatedAt?new Date(state.updatedAt).toLocaleString("it-IT"):"—"}.`;
+      setFolderStatus(msg);
+      alert(msg);
+    }else{
+      if(folderHandle?.name){
+        const cleaned=stripYearsFromLabel(folderHandle.name);
+        state.archiveId=normalizeArchiveId(cleaned || folderHandle.name);
+        state.archiveLabel=resolveArchiveLabel({
+          ...state,
+          archiveId: state.archiveId,
+          archiveLabel: cleaned || state.archiveLabel
+        });
+      }
+      setActiveYear(getYear());
+      setActiveArchive(getArchiveId());
+      await saveStateToFolder();
+      const msg=`Nessun JSON trovato in ${folderHandle.name}. Creato dati/turni/${yearStateFilename(getYear())} con i dati attuali (${state.people.length} dipendenti).`;
+      setFolderStatus(msg);
+      alert(msg);
+    }
+  }catch(e){
+    const msg="Errore lettura archivio: "+e.message;
+    setFolderStatus(msg);
+    alert(msg);
+  }
+}
+async function saveStateToFolder(){
+  if(!folderHandle) return false;
+  const tdir=await getTurniDir();
+  const payload={...state, year:getYear(), updatedAt:new Date().toISOString()};
+  await writeJson(tdir, yearStateFilename(getYear()), payload);
+  // copia di backup giornaliera
+  try{
+    const bdir=await ensureDir(folderHandle, "backup");
+    const day=new Date().toISOString().slice(0,10);
+    await writeJson(bdir, `pianificatore-turni-${getYear()}-${day}.json`, payload);
+  }catch(_){ /* backup best-effort */ }
+  return true;
+}
+async function writeExcelToFolder(buf, filename){
+  if(!folderHandle) return false;
+  const docs=await getDocumentiDir();
+  const fh=await docs.getFileHandle(filename, { create:true });
+  const w=await fh.createWritable();
+  await w.write(buf);
+  await w.close();
+  return true;
+}
+
+
+async function saveState(announce=true){
+  state.updatedAt=new Date().toISOString();
+  state.year=getYear();
+  state.archiveId=getArchiveId();
+  state.archiveLabel=resolveArchiveLabel(state);
+  setActiveYear(state.year);
+  setActiveArchive(state.archiveId);
+  localStorage.setItem(storageKey(getYear()), JSON.stringify(state));
+  let folderOk=false, folderErr="";
+  if(CLOUD_MODE && CLOUD_SHOP_ID && window.parent?.TurniAuth?.saveArchive){
+    try{
+      // Non sovrascrivere mai Firebase con un archivio vuoto (es. switch negozio / seed fallito)
+      if(!(state.people||[]).length){
+        folderErr="Salvataggio cloud saltato: nessun dipendente in memoria.";
+      }else{
+        await window.parent.TurniAuth.saveArchive(CLOUD_SHOP_ID, getYear(), state);
+        folderOk=true;
+      }
+    }catch(e){ folderErr=e.message; }
+  }else if(folderHandle){
+    try{ folderOk=!!(await saveStateToFolder()); }
+    catch(e){ folderErr=e.message; }
+  }
+  const el=document.getElementById("saveStatus");
+  if(el&&announce){
+    if(CLOUD_MODE && folderOk) el.textContent=`Salvato su Firebase (${CLOUD_SHOP_ID}/${getYear()}) · `+new Date(state.updatedAt).toLocaleString("it-IT");
+    else if(folderOk && folderHandle) el.textContent=`Salvato in OneDrive (${folderHandle.name}/dati/turni) · `+new Date(state.updatedAt).toLocaleString("it-IT");
+    else if(folderHandle && folderErr) el.textContent=`Salvato in locale; OneDrive non riuscito: ${folderErr}`;
+    else if(CLOUD_MODE && folderErr) el.textContent=`Salvato in locale; Firebase: ${folderErr}`;
+    else el.textContent="Salvato in locale · "+new Date(state.updatedAt).toLocaleString("it-IT")+(folderHandle?"":" · seleziona la cartella OneDrive per l’archivio condiviso");
+  }
+  if(folderOk) setFolderStatus(CLOUD_MODE
+    ? `Ultimo salvataggio Firebase: ${CLOUD_SHOP_ID}/${getYear()} · `+new Date(state.updatedAt).toLocaleString("it-IT")
+    : `Ultimo salvataggio: ${yearStateFilename(getYear())} · `+new Date(state.updatedAt).toLocaleString("it-IT"));
+}
+
+function getEntry(personId, ds){
+  const e=normalizeEntry((state.turni[personId]||{})[ds]);
+  if(e.straordinario==null) e.straordinario=null;
+  return e;
+}
+function setEntry(personId, ds, entry){
+  if(!state.turni[personId]) state.turni[personId]={};
+  const prev=getEntry(personId, ds);
+  const e=normalizeEntry(entry);
+  // conserva la nota se il chiamante non la passa esplicitamente
+  if(entry && typeof entry==="object" && !Array.isArray(entry) && !("note" in entry)){
+    e.note=prev.note||null;
+  }
+  if(isEmptyEntry(e)) delete state.turni[personId][ds];
+  else state.turni[personId][ds]=e;
+}
+
+function weekOvertime(person, weekDates){
+  let worked=0;
+  for(const d of weekDates) worked += entryWorkHours(getEntry(person.id, iso(d)));
+  return Math.max(0, round3(worked - (Number(person.hoursWeek)||0)));
+}
+/** Ore strao per ciascun giorno della settimana (visibili in cella). */
+function weekDayOvertimeList(person, weekDates){
+  const entries=weekDates.map(d=>getEntry(person.id, iso(d)));
+  const stored=entries.map(e=>entryStrao(e));
+  if(stored.some(x=>x>0)) return stored;
+  const worked=entries.map(e=>entryWorkHours(e));
+  const weekOT=Math.max(0, round3(worked.reduce((a,b)=>a+b,0) - (Number(person.hoursWeek)||0)));
+  if(weekOT<=0) return weekDates.map(()=>0);
+  // eccesso oltre 8h nel giorno + eventuale residuo settimanale sull'ultimo giorno lavorato
+  const excess=worked.map(h=>Math.max(0, round3(h-DAY_CAP)));
+  const sumEx=round3(excess.reduce((a,b)=>a+b,0));
+  const rem=round3(Math.max(0, weekOT-sumEx));
+  let last=-1;
+  worked.forEach((h,i)=>{ if(h>0) last=i; });
+  return excess.map((x,i)=>round3(x+(i===last?rem:0)));
+}
+
+function ratio(person){ return (Number(person.hoursWeek)||0)/40; }
+
+/**
+ * Mese interamente compilato per la risorsa: ogni giorno in forza ha un turno/assenza
+ * (ore, RIPOSO, FERIE, PAR, …). Note sole non contano.
+ * Solo alcuni giorni di FERIE/PAR → mese NON completo → restano liberi fittizi.
+ */
+function isMonthFullyCompiled(personId, month){
+  const year=getYear();
+  const dim=daysInMonth(year, month);
+  const person=state.people.find(p=>p.id===personId);
+  let active=0;
+  for(let d=1;d<=dim;d++){
+    const ds=`${year}-${pad(month)}-${pad(d)}`;
+    if(person && !personActiveOn(person, ds)) continue;
+    active++;
+    const e=normalizeEntry(getEntry(personId, ds));
+    if(!(e.work || e.par || e.allatt || e.kind)) return false;
+  }
+  return active>0;
+}
+
+/**
+ * Giorni che maturano nel mese (formula tipo colonna AK da settembre):
+ * - RIPOSO (L) → non matura nulla
+ * - CONGEDO / MALATTIA → matura solo ferie (non PAR)
+ * - ALLATTAMENTO → matura ferie (e PAR); le ore non scalano il goduto PAR
+ * - resto (lavoro, FERIE, PAR, FESTIVO, fuori sede, vuoto…) → matura ferie e PAR
+ */
+function monthAccrualDayCounts(person, month){
+  const year=getYear();
+  const dim=daysInMonth(year, month);
+  let ferieDays=0, parDays=0, liberi=0, congedi=0;
+  for(let d=1; d<=dim; d++){
+    const ds=`${year}-${pad(month)}-${pad(d)}`;
+    if(!personActiveOn(person, ds)) continue;
+    const e=getEntry(person.id, ds);
+    if(e.kind==="RIPOSO"){ liberi++; continue; }
+    ferieDays++;
+    if(e.kind==="CONGEDO" || e.kind==="MALATTIA"){ congedi++; continue; }
+    parDays++;
+  }
+  return { ferieDays, parDays, liberi, congedi };
+}
+
+/** Liberi fittizi Excel: ROUNDUP(giorni_mese / 3.5; 0) quando i turni non sono ancora compilati. */
+function fictitiousLiberi(dim){
+  return Math.ceil(dim / 3.5);
+}
+
+/** Override manuale LIBERI FITTIZI: "si" | "no" | null (auto). */
+function getLiberiFittiziOverride(personId, month){
+  const o=(state.liberiFittizi||{})[personId];
+  if(!o) return null;
+  const v=o[String(month)];
+  if(v==="si" || v==="no") return v;
+  return null;
+}
+function setLiberiFittiziOverride(personId, month, value){
+  if(!state.liberiFittizi) state.liberiFittizi={};
+  if(!state.liberiFittizi[personId]) state.liberiFittizi[personId]={};
+  const key=String(month);
+  if(value!=="si" && value!=="no"){
+    delete state.liberiFittizi[personId][key];
+    if(!Object.keys(state.liberiFittizi[personId]).length) delete state.liberiFittizi[personId];
+  }else{
+    state.liberiFittizi[personId][key]=value;
+  }
+}
+/** Auto: SI finché il mese non è interamente compilato; NO solo a mese completo. */
+function autoLiberiFittizi(personId, month){
+  return !isMonthFullyCompiled(personId, month);
+}
+function effectiveLiberiFittizi(personId, month){
+  const ov=getLiberiFittiziOverride(personId, month);
+  if(ov==="si") return { use:true, mode:"manuale", override:"si" };
+  if(ov==="no") return { use:false, mode:"manuale", override:"no" };
+  const use=autoLiberiFittizi(personId, month);
+  return { use, mode:"auto", override:null };
+}
+/** Ciclo: auto → forza opposto → forza stesso dell'auto → auto. */
+function cycleLiberiFittiziOverride(personId, month){
+  const auto=autoLiberiFittizi(personId, month);
+  const ov=getLiberiFittiziOverride(personId, month);
+  if(ov==null){
+    setLiberiFittiziOverride(personId, month, auto ? "no" : "si");
+    return;
+  }
+  const forcedSi=ov==="si";
+  if(forcedSi === auto){
+    setLiberiFittiziOverride(personId, month, null);
+  }else{
+    setLiberiFittiziOverride(personId, month, auto ? "si" : "no");
+  }
+}
+
+function monthAccrualIncrement(person, month){
+  const r=ratio(person);
+  const year=getYear();
+  const dim=daysInMonth(year, month);
+  let activeDays=0;
+  for(let d=1;d<=dim;d++){
+    if(personActiveOn(person, `${year}-${pad(month)}-${pad(d)}`)) activeDays++;
+  }
+  const fx=effectiveLiberiFittizi(person.id, month);
+  if(activeDays===0){
+    return { ferie:0, par:0, ferieDays:0, parDays:0, liberi:0, congedi:0, fittizi:false, fittiziMode:fx.mode };
+  }
+  // LIBERI FITTIZI = SI → stima Excel ROUNDUP(giorni/3.5)
+  if(fx.use){
+    const liberi=fictitiousLiberi(activeDays);
+    const days=Math.max(0, activeDays - liberi);
+    return {
+      ferie: round3(days * FERIE_DAY_RATE * r),
+      par: round3(days * PAR_DAY_RATE * r),
+      ferieDays: days,
+      parDays: days,
+      liberi,
+      congedi: 0,
+      fittizi: true,
+      fittiziMode: fx.mode
+    };
+  }
+  const c=monthAccrualDayCounts(person, month);
+  return {
+    ferie: round3(c.ferieDays * FERIE_DAY_RATE * r),
+    par: round3(c.parDays * PAR_DAY_RATE * r),
+    ferieDays: c.ferieDays,
+    parDays: c.parDays,
+    liberi: c.liberi,
+    congedi: c.congedi,
+    fittizi: false,
+    fittiziMode: fx.mode
+  };
+}
+
+function getMaturatoOverride(personId, month){
+  const o=(state.maturato||{})[personId];
+  if(!o) return null;
+  const v=o[String(month)];
+  if(!v) return null;
+  if(v.ferie==null && v.par==null) return null;
+  return v;
+}
+function getGodutoOverride(personId, month){
+  const o=(state.goduto||{})[personId];
+  if(!o) return null;
+  const v=o[String(month)];
+  if(!v) return null;
+  if(v.ferie==null && v.par==null) return null;
+  return v;
+}
+function isFieldManual(kind, personId, month, field){
+  const ov=kind==="goduto" ? getGodutoOverride(personId, month) : getMaturatoOverride(personId, month);
+  return !!(ov && ov[field]!=null);
+}
+/** Imposta/cancella un solo campo (ferie|par) senza toccare l'altro. value=null → auto. */
+function setFieldOverride(kind, personId, month, field, value){
+  const bag=kind==="goduto" ? "goduto" : "maturato";
+  if(!state[bag]) state[bag]={};
+  if(!state[bag][personId]) state[bag][personId]={};
+  const key=String(month);
+  const cur=state[bag][personId][key]||{ferie:null,par:null};
+  const next={ ferie: cur.ferie!=null?cur.ferie:null, par: cur.par!=null?cur.par:null };
+  next[field]=(value==null||value==="") ? null : Number(value);
+  if(next.ferie==null && next.par==null) delete state[bag][personId][key];
+  else state[bag][personId][key]=next;
+  // i mesi successivi sullo stesso campo ripartono dalla nuova base
+  for(let m=month+1;m<=12;m++){
+    const o=state[bag][personId][String(m)];
+    if(!o) continue;
+    o[field]=null;
+    if(o.ferie==null && o.par==null) delete state[bag][personId][String(m)];
+  }
+}
+function setMaturatoOverride(personId, month, ferie, par){
+  if(ferie!==undefined) setFieldOverride("maturato", personId, month, "ferie", ferie);
+  if(par!==undefined) setFieldOverride("maturato", personId, month, "par", par);
+}
+function setGodutoOverride(personId, month, ferie, par){
+  if(ferie!==undefined) setFieldOverride("goduto", personId, month, "ferie", ferie);
+  if(par!==undefined) setFieldOverride("goduto", personId, month, "par", par);
+}
+/** Rimuove override maturato/goduto/liberi fittizi fuori dal periodo in forza. */
+function clearAccrualOutsideEmployment(person){
+  if(!person||!person.id) return;
+  const year=getYear();
+  const start=personEmploymentStart(person, year);
+  const end=personEmploymentEnd(person);
+  for(const bag of ["maturato","goduto","liberiFittizi"]){
+    const byMonth=(state[bag]||{})[person.id];
+    if(!byMonth) continue;
+    for(const key of Object.keys(byMonth)){
+      const m=Number(key);
+      if(!m) continue;
+      const monthStart=`${year}-${pad(m)}-01`;
+      const monthEnd=`${year}-${pad(m)}-${pad(daysInMonth(year,m))}`;
+      if(start > monthEnd || (end && end < monthStart)) delete byMonth[key];
+    }
+    if(bag==="liberiFittizi" && state.liberiFittizi && state.liberiFittizi[person.id] && !Object.keys(state.liberiFittizi[person.id]).length){
+      delete state.liberiFittizi[person.id];
+    }
+  }
+}
+
+/** Cumulativo goduto: solo nei mesi in forza (dalla data inizio). */
+function cumulativeGoduto(person, month){
+  if(month<1) return { ferie:0, par:0, ferieMode:"fuori", parMode:"fuori", mode:"fuori" };
+  const year=getYear();
+  const start=personEmploymentStart(person, year);
+  const end=personEmploymentEnd(person);
+  const monthStart=`${year}-${pad(month)}-01`;
+  const monthEnd=`${year}-${pad(month)}-${pad(daysInMonth(year, month))}`;
+  if(start > monthEnd || (end && end < monthStart)){
+    return month>1 ? cumulativeGoduto(person, month-1) : { ferie:0, par:0, ferieMode:"fuori", parMode:"fuori", mode:"fuori" };
+  }
+  const prev=month>1 ? cumulativeGoduto(person, month-1) : { ferie:0, par:0 };
+  const u=usageInMonth(person.id, month);
+  const autoF=round3(prev.ferie + u.ferieDays*8);
+  const autoP=round3(prev.par + u.parHours);
+  const ov=getGodutoOverride(person.id, month);
+  const fMan=ov&&ov.ferie!=null;
+  const pMan=ov&&ov.par!=null;
+  return {
+    ferie: fMan?Number(ov.ferie):autoF,
+    par: pMan?Number(ov.par):autoP,
+    ferieMode: fMan?"manuale":"auto",
+    parMode: pMan?"manuale":"auto",
+    mode: (fMan||pMan)?"manuale":"auto"
+  };
+}
+
+/** Cumulativo maturato: parte dalla data inizio lavoro (zero prima). */
+function cumulativeMatured(person, month){
+  if(month<1) return { ferie:0, par:0, ferieMode:"fuori", parMode:"fuori", mode:"fuori" };
+  const year=getYear();
+  const start=personEmploymentStart(person, year);
+  const end=personEmploymentEnd(person);
+  const monthStart=`${year}-${pad(month)}-01`;
+  const monthEnd=`${year}-${pad(month)}-${pad(daysInMonth(year, month))}`;
+  if(start > monthEnd || (end && end < monthStart)){
+    return month>1 ? cumulativeMatured(person, month-1) : { ferie:0, par:0, ferieMode:"fuori", parMode:"fuori", mode:"fuori" };
+  }
+  const prev=month>1 ? cumulativeMatured(person, month-1) : { ferie:0, par:0 };
+  const inc=monthAccrualIncrement(person, month);
+  const autoF=round3(prev.ferie + inc.ferie);
+  const autoP=round3(prev.par + inc.par);
+  const autoMode=inc.fittizi ? "fittizi" : "auto";
+  const ov=getMaturatoOverride(person.id, month);
+  const fMan=ov&&ov.ferie!=null;
+  const pMan=ov&&ov.par!=null;
+  return {
+    ferie: fMan?Number(ov.ferie):autoF,
+    par: pMan?Number(ov.par):autoP,
+    ferieMode: fMan?"manuale":autoMode,
+    parMode: pMan?"manuale":autoMode,
+    mode: (fMan||pMan)?"manuale":autoMode,
+    ferieDays: inc.ferieDays,
+    parDays: inc.parDays,
+    liberi: inc.liberi,
+    fittizi: !!inc.fittizi,
+    fittiziMode: inc.fittiziMode||"auto"
+  };
+}
+
+function monthMatured(person, month){
+  const cur=cumulativeMatured(person, month);
+  const prev=month>1 ? cumulativeMatured(person, month-1) : { ferie:0, par:0 };
+  return {
+    ferie: round3(cur.ferie - prev.ferie),
+    par: round3(cur.par - prev.par),
+    mode: cur.mode||"auto",
+    ferieDays: cur.ferieDays,
+    parDays: cur.parDays
+  };
+}
+
+function maturedThrough(person, month){
+  const c=cumulativeMatured(person, month);
+  return { ferie: round3(c.ferie), par: round3(c.par) };
+}
+
+function usageInMonth(personId, month){
+  let ferieDays=0, parHours=0, riposi=0;
+  const year=getYear();
+  const dim=daysInMonth(year, month);
+  const person=state.people.find(p=>p.id===personId);
+  for(let d=1;d<=dim;d++){
+    const ds=`${year}-${pad(month)}-${pad(d)}`;
+    if(person && !personActiveOn(person, ds)) continue;
+    const e=getEntry(personId, ds);
+    ferieDays += entryFerieDay(e);
+    parHours += entryParHours(e);
+    if(entryIsRiposo(e)) riposi++;
+  }
+  return { ferieDays, parHours, riposi };
+}
+function usageUpTo(personId, month){
+  let ferieDays=0, parHours=0;
+  for(let m=1;m<=month;m++){ const u=usageInMonth(personId,m); ferieDays+=u.ferieDays; parHours+=u.parHours; }
+  return { ferieDays, parHours };
+}
+function balancesFor(person, month){
+  const tot=usageUpTo(person.id, month);
+  const matured=cumulativeMatured(person, month);
+  const prev=month>1?maturedThrough(person, month-1):{ferie:0,par:0};
+  const god=cumulativeGoduto(person, month);
+  const ferieGoduto=round3(god.ferie);
+  const parGoduto=round3(god.par);
+  const ferieSaldo=matured.ferie-ferieGoduto+(Number(person.ferieRes)||0);
+  const parSaldo=matured.par-parGoduto+(Number(person.parRes)||0);
+  const anyManual=matured.ferieMode==="manuale"||matured.parMode==="manuale"||god.ferieMode==="manuale"||god.parMode==="manuale";
+  const mode = anyManual ? "manuale" : (matured.mode||"auto");
+  return {
+    ferieMaturato:matured.ferie, ferieGoduto, ferieSaldo,
+    ferieDelta:ferieSaldo-(matured.ferie-prev.ferie),
+    parMaturato:matured.par, parGoduto, parSaldo,
+    parDelta:parSaldo-(matured.par-prev.par),
+    ferieDaysYear: tot.ferieDays,
+    parHoursYear: tot.parHours,
+    ferieGodutoYear: ferieGoduto,
+    parGodutoYear: parGoduto,
+    mode,
+    maturatoFerieMode: matured.ferieMode||"auto",
+    maturatoParMode: matured.parMode||"auto",
+    godutoFerieMode: god.ferieMode||"auto",
+    godutoParMode: god.parMode||"auto",
+    liberi: matured.liberi!=null ? matured.liberi : 0,
+    fittizi: !!matured.fittizi,
+    fittiziMode: matured.fittiziMode||"auto"
+  };
+}
+
+/* ---- UI ---- */
+function closeMenu(){ document.getElementById("cellMenu").classList.remove("open"); menuCtx=null; }
+function closeModal(){ document.getElementById("modalBack").classList.remove("open"); }
+
+function openMenu(personId, ds, x, y){
+  menuCtx={personId, ds};
+  const menu=document.getElementById("cellMenu");
+  const e=getEntry(personId, ds);
+  const used=entryOccupiedHours(e);
+  const room=round3(DAY_CAP-used);
+  menu.innerHTML=`
+    <button type="button" data-act="work">⏱ Ore lavorate…</button>
+    <button type="button" data-act="par" ${room<=0?"disabled":""}>➕ PAR… ${room>0?`(max ${fmt(room)}h)`: "(giorno pieno)"}</button>
+    <button type="button" data-act="allatt" ${room<=0?"disabled":""}>Allattamento… ${room>0?`(max ${fmt(room)}h)`: "(giorno pieno)"}</button>
+    <div class="sep"></div>
+    ${["RIPOSO","FERIE","FESTIVO","CONGEDO","MALATTIA","PERMESSO STUDIO"].map(k=>`<button type="button" data-act="kind" data-kind="${k}">${k}</button>`).join("")}
+    <div class="sep"></div>
+    <button type="button" data-act="kind" data-kind="${FUORI_SEDE}">FUORI SEDE</button>
+    <div class="sep"></div>
+    <button type="button" data-act="note">${e.note?"✏️ Nota…":"Nota…"}</button>
+    <div class="sep"></div>
+    <button type="button" class="danger" data-act="clear">Cancella</button>
+  `;
+  menu.classList.add("open");
+  const pad=8;
+  const mw=menu.offsetWidth||220, mh=menu.offsetHeight||320;
+  let left=x, top=y;
+  if(left+mw>window.innerWidth-pad) left=window.innerWidth-mw-pad;
+  if(top+mh>window.innerHeight-pad) top=window.innerHeight-mh-pad;
+  menu.style.left=Math.max(pad,left)+"px";
+  menu.style.top=Math.max(pad,top)+"px";
+  menu.querySelectorAll("button").forEach(btn=>{
+    btn.addEventListener("click", ()=>onMenuAction(btn));
+  });
+}
+
+function onMenuAction(btn){
+  if(!menuCtx) return;
+  const {personId, ds}=menuCtx;
+  const act=btn.dataset.act;
+  closeMenu();
+  if(act==="clear"){ setEntry(personId, ds, emptyEntry()); saveState(); renderAll(); return; }
+  if(act==="kind"){
+    // exclusive full-day kinds replace work/par/allatt (nota resta)
+    setEntry(personId, ds, { work:null, par:null, allatt:null, kind:btn.dataset.kind, straordinario:null });
+    saveState(); renderAll(); return;
+  }
+  if(act==="work"){ openWorkModal(personId, ds); return; }
+  if(act==="par"){ openParModal(personId, ds); return; }
+  if(act==="allatt"){ openAllattModal(personId, ds); return; }
+  if(act==="note"){ openNoteModal(personId, ds); return; }
+}
+
+function openNoteModal(personId, ds){
+  const e=getEntry(personId, ds);
+  showModal(`
+    <h3>Nota del giorno</h3>
+    <p class="hint">${ds} · testo libero, anche senza turno (es. corso, evento, promemoria)</p>
+    <label>Nota<textarea id="mNote" maxlength="200" placeholder="Scrivi una nota…">${escapeHtml(e.note||"")}</textarea></label>
+    <div class="err" id="mErr"></div>
+    <div class="actions">
+      <button type="button" id="mClearNote">Togli nota</button>
+      <button type="button" id="mCancel">Annulla</button>
+      <button type="button" class="primary" id="mOk">Salva</button>
+    </div>
+  `, ()=>{
+    document.getElementById("mCancel").onclick=closeModal;
+    document.getElementById("mClearNote").onclick=()=>{
+      setEntry(personId, ds, { work:e.work, par:e.par, allatt:e.allatt, kind:e.kind, straordinario:e.straordinario, note:null });
+      closeModal(); saveState(); renderAll();
+    };
+    document.getElementById("mOk").onclick=()=>{
+      const note=document.getElementById("mNote").value.trim();
+      setEntry(personId, ds, { work:e.work, par:e.par, allatt:e.allatt, kind:e.kind, straordinario:e.straordinario, note:note||null });
+      closeModal(); saveState(); renderAll();
+    };
+  });
+}
+
+function openWorkModal(personId, ds){
+  const e=getEntry(personId, ds);
+  let start="9", end="17";
+  if(e.work){
+    const m=e.work.match(/^(\S+)\s*[-–]\s*(\S+)$/);
+    if(m){ start=m[1]; end=m[2]; }
+  }
+  const otherH=round3(entryParHours(e)+entryAllattHours(e));
+  const maxWork = otherH>0 ? round3(DAY_CAP - otherH) : 12;
+  showModal(`
+    <h3>Ore lavorate</h3>
+    <p class="hint">${ds} · max ${fmt(maxWork)}h${otherH?` (PAR/allatt già ${fmt(otherH)}h)`:" (oltre 8h = straordinario)"}</p>
+    <div class="row">
+      <label>Inizio<input id="mStart" value="${escapeHtml(start)}" placeholder="9 oppure 11.30"></label>
+      <label>Fine<input id="mEnd" value="${escapeHtml(end)}" placeholder="17 oppure 19.30"></label>
+    </div>
+    <div class="err" id="mErr"></div>
+    <div class="actions">
+      <button type="button" id="mCancel">Annulla</button>
+      <button type="button" class="primary" id="mOk">Salva</button>
+    </div>
+  `, ()=>{
+    document.getElementById("mCancel").onclick=closeModal;
+    document.getElementById("mOk").onclick=()=>{
+      const s=document.getElementById("mStart").value.trim();
+      const f=document.getElementById("mEnd").value.trim();
+      const range=`${s} - ${f}`;
+      const h=hoursFromRange(range);
+      const err=document.getElementById("mErr");
+      if(!h){ err.textContent="Orario non valido"; return; }
+      const otherNow=round3(entryParHours(e)+entryAllattHours(e));
+      if(otherNow>0 && h + otherNow > DAY_CAP+1e-9){ err.textContent=`Con PAR/allattamento il totale non può superare 8h`; return; }
+      if(otherNow<=0 && h > 12+1e-9){ err.textContent=`Massimo 12h`; return; }
+      // clear exclusive kinds when setting work; keep stored strao only if still relevant
+      const strao = otherNow<=0 && h>DAY_CAP ? round3(h-DAY_CAP) : null;
+      setEntry(personId, ds, { work:range, par:e.par, allatt:e.allatt, kind:null, straordinario:strao });
+      closeModal(); saveState(); renderAll();
+    };
+  });
+}
+
+function openParModal(personId, ds){
+  const e=getEntry(personId, ds);
+  const room=round3(DAY_CAP - entryWorkHours(e) - entryAllattHours(e));
+  showModal(`
+    <h3>PAR (permesso)</h3>
+    <p class="hint">${ds} · ore lavorate ${fmt(entryWorkHours(e))}h · max PAR ${fmt(room)}h · non usare per allattamento</p>
+    <label>Ore PAR<input id="mPar" type="number" min="0.5" max="${room}" step="0.5" value="${Math.min(e.par||8, room)}"></label>
+    <div class="err" id="mErr"></div>
+    <div class="actions">
+      <button type="button" id="mCancel">Annulla</button>
+      <button type="button" class="primary" id="mOk">Salva</button>
+    </div>
+  `, ()=>{
+    document.getElementById("mCancel").onclick=closeModal;
+    document.getElementById("mOk").onclick=()=>{
+      const par=Number(document.getElementById("mPar").value);
+      const err=document.getElementById("mErr");
+      if(!par||par<=0){ err.textContent="Inserisci le ore"; return; }
+      if(par + entryWorkHours(e) + entryAllattHours(e) > DAY_CAP+1e-9){ err.textContent=`Totale > 8h`; return; }
+      setEntry(personId, ds, { work:e.work, par, allatt:e.allatt, kind:null, straordinario:null });
+      closeModal(); saveState(); renderAll();
+    };
+  });
+}
+
+function openAllattModal(personId, ds){
+  const e=getEntry(personId, ds);
+  const room=round3(DAY_CAP - entryWorkHours(e) - entryParHours(e));
+  showModal(`
+    <h3>Riposi allattamento</h3>
+    <p class="hint">${ds} · art. 39 D.Lgs. 151/2001 · non scala il PAR · il giorno matura comunque le ferie · max ${fmt(room)}h</p>
+    <label>Ore allattamento<input id="mAllatt" type="number" min="0.5" max="${room}" step="0.5" value="${Math.min(e.allatt||2, room)}"></label>
+    <div class="err" id="mErr"></div>
+    <div class="actions">
+      <button type="button" id="mCancel">Annulla</button>
+      <button type="button" class="primary" id="mOk">Salva</button>
+    </div>
+  `, ()=>{
+    document.getElementById("mCancel").onclick=closeModal;
+    document.getElementById("mOk").onclick=()=>{
+      const allatt=Number(document.getElementById("mAllatt").value);
+      const err=document.getElementById("mErr");
+      if(!allatt||allatt<=0){ err.textContent="Inserisci le ore"; return; }
+      if(allatt + entryWorkHours(e) + entryParHours(e) > DAY_CAP+1e-9){ err.textContent=`Totale > 8h`; return; }
+      setEntry(personId, ds, { work:e.work, par:e.par, allatt, kind:null, straordinario:null });
+      closeModal(); saveState(); renderAll();
+    };
+  });
+}
+
+function showModal(html, bind){
+  const back=document.getElementById("modalBack");
+  document.getElementById("modal").innerHTML=html;
+  back.classList.add("open");
+  bind&&bind();
+}
+
+function renderMonthTabs(){
+  const el=document.getElementById("monthTabs");
+  el.innerHTML=MONTHS.map((m,i)=>`<button type="button" data-month="${i+1}" class="${currentMonth===i+1?"active":""}">${m.slice(0,3)}</button>`).join("");
+  el.querySelectorAll("button").forEach(btn=>btn.addEventListener("click",()=>{ currentMonth=Number(btn.dataset.month); closeMenu(); renderAll(); }));
+}
+
+function renderTurni(){
+  const wrap=document.getElementById("turniGrid");
+  const weeks=weeksForMonth(getYear(), currentMonth);
+  document.getElementById("monthTitle").textContent=`${MONTHS[currentMonth-1]} ${getYear()}`;
+  let html="";
+  weeks.forEach(week=>{
+    html+=`<div class="week-block"><table class="turni">`;
+    html+=`<tr class="wd"><th class="label"></th><th class="storeh"></th>${week.map((d,i)=>`<th class="${d.getDay()===0?"sun":""}">${WEEKDAYS[i]}</th>`).join("")}<th class="ot">TOT ORE STRAO</th></tr>`;
+    html+=`<tr class="days"><th class="label">RISORSA</th><th class="storeh">STORE</th>`;
+    week.forEach(d=>{ const inMonth=d.getMonth()+1===currentMonth; html+=`<th class="${[inMonth?"":"out", d.getDay()===0?"sun":""].filter(Boolean).join(" ")}">${d.getDate()}</th>`; });
+    html+=`<th class="ot"></th></tr>`;
+    peopleForMonth(getYear(), currentMonth).forEach((person)=>{
+      const ot=weekOvertime(person, week);
+      const dayOts=weekDayOvertimeList(person, week);
+      html+=`<tr><td class="label">${escapeHtml(person.name)}</td>`;
+      html+=`<td class="store">${escapeHtml(person.store||"")}</td>`;
+      week.forEach((d,di)=>{
+        const ds=iso(d); const inMonth=d.getMonth()+1===currentMonth;
+        const active=personActiveOn(person, ds);
+        if(!active){
+          html+=`<td class="cell out" data-person="${person.id}" data-date="${ds}" data-inmonth="0" style="background:#${COLORS.empty}"></td>`;
+          return;
+        }
+        const e=getEntry(person.id, ds);
+        const bg=colorForEntry(e, ds, person.store);
+        const noteOnly=!!(e.note && !e.work && !e.par && !e.allatt && !e.kind);
+        html+=`<td class="cell ${inMonth?"":"out"}${noteOnly?" note-only":""}" data-person="${person.id}" data-date="${ds}" data-inmonth="${inMonth?1:0}" style="background:#${bg}">${formatCellHtml(e, dayOts[di]||0)}</td>`;
+      });
+      html+=`<td class="ot-val">${ot?fmt(ot):""}</td></tr>`;
+    });
+    html+=`</table></div>`;
+  });
+  wrap.innerHTML=html;
+  wrap.querySelectorAll("td.cell").forEach(td=>{
+    td.addEventListener("click",(ev)=>{
+      if(td.dataset.inmonth!=="1") return;
+      const person=state.people.find(p=>p.id===td.dataset.person);
+      if(person && !personActiveOn(person, td.dataset.date)){
+        if(person.startDate && td.dataset.date < person.startDate) alert("Questa risorsa inizia il "+person.startDate);
+        else if(person.endDate) alert("Questa risorsa termina il "+person.endDate);
+        return;
+      }
+      ev.stopPropagation();
+      openMenu(td.dataset.person, td.dataset.date, ev.clientX, ev.clientY);
+    });
+  });
+}
+
+function renderPeople(){
+  const table=document.getElementById("peopleTable");
+  let html=`<thead><tr>
+    <th>Nome</th><th>Store</th><th>Ore/sett.</th>
+    <th title="Data inizio">Inizio</th><th title="Data fine">Fine</th>
+    <th title="Residuo ferie all’ingresso (ore)">Ferie ingr. (h)</th>
+    <th title="Residuo PAR all’ingresso (ore)">PAR ingr. (h)</th><th></th>
+  </tr></thead><tbody>`;
+  state.people.forEach((p,idx)=>{
+    html+=`<tr>
+      <td><input data-i="${idx}" data-f="name" value="${escapeHtml(p.name)}"></td>
+      <td><input data-i="${idx}" data-f="store" value="${escapeHtml(p.store||"")}"></td>
+      <td><input class="num" type="number" data-i="${idx}" data-f="hoursWeek" value="${p.hoursWeek}"></td>
+      <td><input type="date" data-i="${idx}" data-f="startDate" value="${escapeHtml(p.startDate||(getYear()+'-01-01'))}"></td>
+      <td><input type="date" data-i="${idx}" data-f="endDate" value="${escapeHtml(p.endDate||"")}"></td>
+      <td><input class="num" type="number" step="0.001" data-i="${idx}" data-f="ferieRes" value="${p.ferieRes}"></td>
+      <td><input class="num" type="number" step="0.001" data-i="${idx}" data-f="parRes" value="${p.parRes}"></td>
+      <td><button type="button" data-del="${idx}">Rimuovi</button></td>
+    </tr>`;
+  });
+  html+=`</tbody>`;
+  table.innerHTML=html;
+  table.querySelectorAll("input").forEach(inp=>{
+    inp.addEventListener("change",()=>{
+      const i=Number(inp.dataset.i), f=inp.dataset.f;
+      let v=inp.value;
+      if(f==="hoursWeek"||f==="ferieRes"||f==="parRes") v=Number(v);
+      state.people[i][f]=v;
+      if(f==="startDate"||f==="endDate") clearAccrualOutsideEmployment(state.people[i]);
+      saveState(); renderAll();
+    });
+  });
+  table.querySelectorAll("button[data-del]").forEach(btn=>{
+    btn.addEventListener("click",()=> openRemovePersonModal(Number(btn.dataset.del)));
+  });
+}
+
+function openRemovePersonModal(idx){
+  if(state.people.length<=1) return alert("Serve almeno un dipendente");
+  const p=state.people[idx];
+  const y=getYear();
+  const defaultEnd=p.endDate || `${y}-${pad(new Date().getMonth()+1)}-${pad(new Date().getDate())}`;
+  showModal(`
+    <h3>Chiudi / rimuovi dipendente</h3>
+    <p class="hint">${escapeHtml(p.name)} — scegli l’ultimo giorno di servizio. La maturazione e i turni si fermano dopo quella data. Puoi anche eliminare del tutto la scheda.</p>
+    <label>Data fine (ultimo giorno)<input id="mEndDate" type="date" value="${escapeHtml(defaultEnd)}"></label>
+    <div class="err" id="mErr"></div>
+    <div class="actions">
+      <button type="button" id="mCancel">Annulla</button>
+      <button type="button" id="mHard">Elimina scheda</button>
+      <button type="button" class="primary" id="mOk">Imposta data fine</button>
+    </div>
+  `, ()=>{
+    document.getElementById("mCancel").onclick=closeModal;
+    document.getElementById("mOk").onclick=()=>{
+      const end=document.getElementById("mEndDate").value;
+      const err=document.getElementById("mErr");
+      if(!end){ err.textContent="Data fine obbligatoria"; return; }
+      if(p.startDate && end < p.startDate){ err.textContent="La data fine è prima dell’inizio"; return; }
+      p.endDate=end;
+      // clear turni after end
+      const cal=state.turni[p.id]||{};
+      for(const ds of Object.keys(cal)){ if(ds > end) delete cal[ds]; }
+      closeModal(); saveState(); renderAll();
+    };
+    document.getElementById("mHard").onclick=()=>{
+      if(!confirm("Eliminare definitivamente "+p.name+" e tutti i suoi turni?")) return;
+      const [removed]=state.people.splice(idx,1);
+      delete state.turni[removed.id];
+      closeModal(); saveState(); renderAll();
+    };
+  });
+}
+
+function fieldEditHtml(pid, month, kind, field, value, mode){
+  const man=mode==="manuale";
+  const cls=man?"manuale":"auto";
+  const label=man?"M":"A";
+  const title=man?"Manuale — clicca per tornare ad automatico":"Automatico — clicca per impostare manuale";
+  return `<td class="num"><div class="field-wrap">
+    <button type="button" class="mode-sw ${cls}" title="${title}" data-pid="${pid}" data-month="${month}" data-kind="${kind}" data-field="${field}" data-mode="${cls}">${label}</button>
+    <input class="mat-input ${cls}" type="number" step="0.001" data-pid="${pid}" data-month="${month}" data-kind="${kind}" data-field="${field}" value="${value}">
+  </div></td>`;
+}
+
+function fittiziFlagHtml(pid, month, fittizi, fittiziMode, liberi){
+  const si=!!fittizi;
+  const auto=fittiziMode!=="manuale";
+  const cls=si?"si":"no";
+  const label=si?"SI":"NO";
+  const title=auto
+    ? `Liberi fittizi automatici = ${label} — clicca per forzare`
+    : `Liberi fittizi forzati = ${label} — clicca per cambiare / tornare ad auto`;
+  return `<td class="num"><div class="fittizi-wrap">
+    <button type="button" class="fittizi-sw ${cls}" title="${title}" data-fittizi-pid="${pid}" data-fittizi-month="${month}">${label}${auto?`<span class="fittizi-a">A</span>`:""}</button>
+    <span class="fittizi-liberi" title="Liberi usati nel calcolo">${liberi}</span>
+  </div></td>`;
+}
+
+function renderFerie(){
+  const box=document.getElementById("ferieMonths");
+  let html="";
+  for(let month=1; month<=12; month++){
+    html+=`<div class="month-ferie"><h3>${MONTHS[month-1]} ${getYear()}</h3>
+    <div style="overflow-x:auto"><table class="summary">
+      <thead><tr>
+        <th>Risorsa</th><th>Liberi fittizi</th><th>Ferie gg</th><th>PAR h</th>
+        <th>F maturato</th><th>F goduto</th><th>F saldo</th><th>F saldo−mat.mese</th>
+        <th>PAR maturato</th><th>PAR goduto</th><th>PAR saldo</th><th>PAR saldo−mat.mese</th>
+      </tr></thead><tbody>`;
+    for(const p of peopleForMonth(getYear(), month)){
+      const u=usageInMonth(p.id, month);
+      const b=balancesFor(p, month);
+      html+=`<tr>
+        <td>${escapeHtml(p.name)}</td>
+        ${fittiziFlagHtml(p.id, month, b.fittizi, b.fittiziMode, b.liberi)}
+        <td class="num">${u.ferieDays}</td>
+        <td class="num">${fmt(u.parHours)}</td>
+        ${fieldEditHtml(p.id, month, "maturato", "ferie", b.ferieMaturato, b.maturatoFerieMode)}
+        ${fieldEditHtml(p.id, month, "goduto", "ferie", b.ferieGoduto, b.godutoFerieMode)}
+        <td class="num ${b.ferieSaldo<0?"neg":""}">${fmt(b.ferieSaldo)}</td>
+        <td class="num ${b.ferieDelta<0?"neg":""}">${fmt(b.ferieDelta)}</td>
+        ${fieldEditHtml(p.id, month, "maturato", "par", b.parMaturato, b.maturatoParMode)}
+        ${fieldEditHtml(p.id, month, "goduto", "par", b.parGoduto, b.godutoParMode)}
+        <td class="num ${b.parSaldo<0?"neg":""}">${fmt(b.parSaldo)}</td>
+        <td class="num ${b.parDelta<0?"neg":""}">${fmt(b.parDelta)}</td>
+      </tr>`;
+    }
+    html+=`</tbody></table></div></div>`;
+  }
+  box.innerHTML=html;
+
+  box.querySelectorAll("button.fittizi-sw").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      cycleLiberiFittiziOverride(btn.dataset.fittiziPid, Number(btn.dataset.fittiziMonth));
+      saveState(); renderAll();
+    });
+  });
+
+  box.querySelectorAll("button.mode-sw").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const pid=btn.dataset.pid;
+      const month=Number(btn.dataset.month);
+      const field=btn.dataset.field;
+      const kind=btn.dataset.kind||"maturato";
+      const person=state.people.find(p=>p.id===pid);
+      if(btn.dataset.mode==="manuale"){
+        setFieldOverride(kind, pid, month, field, null);
+      }else{
+        const cur=kind==="goduto"?cumulativeGoduto(person, month):cumulativeMatured(person, month);
+        setFieldOverride(kind, pid, month, field, cur[field]);
+      }
+      saveState(); renderAll();
+    });
+  });
+
+  box.querySelectorAll("input.mat-input").forEach(inp=>{
+    inp.addEventListener("change", ()=>{
+      const pid=inp.dataset.pid;
+      const month=Number(inp.dataset.month);
+      const field=inp.dataset.field;
+      const kind=inp.dataset.kind||"maturato";
+      if(inp.value==="") setFieldOverride(kind, pid, month, field, null);
+      else setFieldOverride(kind, pid, month, field, Number(inp.value));
+      saveState(); renderAll();
+    });
+  });
+
+  let y=`<thead><tr><th>Risorsa</th><th>Tot ferie gg</th><th>Tot PAR h</th><th>Res. F ingresso</th><th>Res. PAR ingresso</th><th>Saldo F fine anno</th><th>Saldo PAR fine anno</th></tr></thead><tbody>`;
+  for(const p of peopleSorted().filter(x=>personActiveInYear(x))){
+    const b=balancesFor(p,12);
+    y+=`<tr>
+      <td>${escapeHtml(p.name)}</td>
+      <td class="num">${fmt(b.ferieGoduto/8)}</td>
+      <td class="num">${fmt(b.parGoduto)}</td>
+      <td class="num">${fmt(p.ferieRes)}</td>
+      <td class="num">${fmt(p.parRes)}</td>
+      <td class="num ${b.ferieSaldo<0?"neg":"pos"}">${fmt(b.ferieSaldo)}</td>
+      <td class="num ${b.parSaldo<0?"neg":"pos"}">${fmt(b.parSaldo)}</td>
+    </tr>`;
+  }
+  y+=`</tbody>`;
+  document.getElementById("ferieYearTable").innerHTML=y;
+}
+
+function renderAll(){
+  const label=resolveArchiveLabel(state);
+  state.archiveLabel=label;
+  document.title=label ? `Pianificatore Turni — ${label} ${getYear()}` : `Pianificatore Turni ${getYear()}`;
+  const h1=document.querySelector("header h1");
+  if(h1) h1.innerHTML=`Pianificatore Turni${label?` — ${escapeHtml(label)}`:""} <span id="yearLabel">${getYear()}</span>`;
+  renderMonthTabs();
+  renderTurni();
+  renderPeople();
+  renderFerie();
+  const st=document.getElementById("saveStatus");
+  if(st&&state.updatedAt) st.textContent=`${label||getArchiveId()} · anno ${getYear()} · aggiornato `+new Date(state.updatedAt).toLocaleString("it-IT");
+}
+
+/* ---- Excel export ---- */
+function fillStyle(hex){ return { type:"pattern", pattern:"solid", fgColor:{argb:"FF"+hex} }; }
+function thinBorder(){ const s={style:"thin",color:{argb:"FF000000"}}; return {top:s,left:s,bottom:s,right:s}; }
+function styleCell(cell,{value,bg,bold=false,size=11}){
+  if(value!==undefined) cell.value=value;
+  cell.alignment={horizontal:"center",vertical:"middle",wrapText:true};
+  cell.font={name:"Calibri",size,bold,color:{argb:"FF000000"}};
+  cell.border=thinBorder();
+  if(bg) cell.fill=fillStyle(bg);
+}
+async function buildMonthWorkbook(month){
+  if(typeof ExcelJS==="undefined") throw new Error("ExcelJS non caricato");
+  const wb=new ExcelJS.Workbook();
+  const ws=wb.addWorksheet(MONTHS_UPPER[month-1],{pageSetup:{orientation:"landscape",fitToPage:true,fitToWidth:1,fitToHeight:0}});
+  // Layout come Turni_HR: intestazioni grigie, celle turno senza colore
+  ws.getColumn(1).width=30.44; ws.getColumn(2).width=16.44;
+  for(let c=3;c<=10;c++) ws.getColumn(c).width=13;
+  const weeks=weeksForMonth(getYear(),month);
+  let row=1;
+  for(const week of weeks){
+    // riga giorni settimana
+    for(let c=1;c<=10;c++) styleCell(ws.getCell(row,c),{value:null,bg:COLORS.header,size:10});
+    for(let i=0;i<7;i++) styleCell(ws.getCell(row,3+i),{value:WEEKDAYS[i],bg:COLORS.header,bold:true,size:10});
+    ws.getRow(row).height=15; row++;
+    // riga RISORSA / STORE / numeri giorno / TOT
+    styleCell(ws.getCell(row,1),{value:"RISORSA",bg:COLORS.header,size:10});
+    styleCell(ws.getCell(row,2),{value:"STORE",bg:COLORS.header,size:10});
+    week.forEach((d,i)=>styleCell(ws.getCell(row,3+i),{value:d.getDate(),bg:COLORS.daynum,size:10}));
+    styleCell(ws.getCell(row,10),{value:"TOT ORE STRAO",bg:COLORS.header,size:10});
+    ws.getRow(row).height=15; row++;
+    peopleForMonth(getYear(), month).forEach((person)=>{
+      const dayOts=weekDayOvertimeList(person, week);
+      styleCell(ws.getCell(row,1),{value:person.name,bg:COLORS.white,size:8});
+      styleCell(ws.getCell(row,2),{value:person.store||"",bg:COLORS.white,size:10});
+      week.forEach((d,i)=>{
+        const ds=iso(d);
+        if(!personActiveOn(person, ds)){
+          styleCell(ws.getCell(row,3+i),{value:"",size:11});
+          return;
+        }
+        const e=getEntry(person.id,ds);
+        let txt=exportEntryText(e);
+        const dayOt=dayOts[i]||0;
+        if(dayOt>0 && !/STRAO/i.test(txt||"")) txt=(txt?txt+"\n":"")+`STRAO ${fmt(dayOt)}`;
+        // celle turno: solo testo/bordi, nessun colore (come file HR)
+        styleCell(ws.getCell(row,3+i),{value:txt||"",size:11});
+      });
+      const ot=weekOvertime(person,week);
+      styleCell(ws.getCell(row,10),{value:ot||null,bg:COLORS.white,size:10});
+      ws.getRow(row).height=15; row++;
+    });
+    // riga vuota di separazione tra settimane
+    styleCell(ws.getCell(row,1),{value:null,bg:COLORS.white,size:8});
+    styleCell(ws.getCell(row,2),{value:null,bg:COLORS.white,size:10});
+    for(let i=0;i<7;i++) styleCell(ws.getCell(row,3+i),{value:null,bg:COLORS.white,size:8});
+    styleCell(ws.getCell(row,10),{value:null,bg:COLORS.white,size:10});
+    ws.getRow(row).height=15;
+    row++;
+  }
+  return wb;
+}
+async function downloadWorkbook(wb, filename){
+  const buf=await wb.xlsx.writeBuffer();
+  const blob=new Blob([buf],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;
+  a.download=filename;
+  a.rel="noopener";
+  a.style.display="none";
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(()=>{
+    a.remove();
+    URL.revokeObjectURL(url);
+  }, 1500);
+  return buf;
+}
+async function exportMonthExcel(){
+  try{
+    const wb=await buildMonthWorkbook(currentMonth);
+    const filename=`Turni_HR_${MONTHS_UPPER[currentMonth-1]}_${getYear()}.xlsx`;
+    const buf=await downloadWorkbook(wb, filename);
+    if(folderHandle){
+      try{
+        await writeExcelToFolder(buf, filename);
+        setFolderStatus(`Excel HR salvato anche in ${folderHandle.name}/documenti/${filename}`);
+      }catch(e){
+        setFolderStatus("Excel scaricato; copia in OneDrive non riuscita: "+e.message);
+      }
+    }
+  }catch(err){ alert("Export Excel fallito: "+err.message); }
+}
+
+/** Excel: riga 1 = nomi risorse; righe successive = ore lavorate per giorno del mese aperto. */
+async function buildHoursByDayWorkbook(month=currentMonth){
+  if(typeof ExcelJS==="undefined") throw new Error("ExcelJS non caricato");
+  const year=getYear();
+  const m=Number(month)||currentMonth;
+  const people=peopleForMonth(year, m);
+  if(!people.length) throw new Error("Nessuna risorsa attiva in questo mese");
+  const dim=daysInMonth(year, m);
+  const storeLabel=resolveArchiveLabel(state) || getArchiveId() || "negozio";
+  const wb=new ExcelJS.Workbook();
+  const ws=wb.addWorksheet(`Ore ${MONTHS_UPPER[m-1]}`,{
+    views:[{state:"frozen", ySplit:1}]
+  });
+  people.forEach((_,i)=>{ ws.getColumn(i+1).width=18; });
+  // Riga 1: nomi
+  people.forEach((p,i)=>{
+    const cell=ws.getCell(1, i+1);
+    cell.value=p.name;
+    cell.font={name:"Calibri", size:10, bold:true};
+    cell.alignment={horizontal:"center", vertical:"middle", wrapText:true};
+    cell.border=thinBorder();
+    cell.fill=fillStyle("E8EEF4");
+  });
+  ws.getRow(1).height=28;
+  // Righe 2..N+1: ore del giorno 1..N
+  for(let day=1; day<=dim; day++){
+    const ds=`${year}-${pad(m)}-${pad(day)}`;
+    const row=day+1;
+    people.forEach((p,i)=>{
+      const cell=ws.getCell(row, i+1);
+      if(!personActiveOn(p, ds)){
+        cell.value="";
+      }else{
+        const h=entryWorkHours(getEntry(p.id, ds));
+        cell.value=h>0 ? round3(h) : 0;
+      }
+      cell.font={name:"Calibri", size:10};
+      cell.alignment={horizontal:"center", vertical:"middle"};
+      cell.border=thinBorder();
+      cell.numFmt="0.##";
+    });
+  }
+  ws.properties = ws.properties || {};
+  // metadati utili nel nome foglio / workbook
+  wb.creator="Pianificatore Turni";
+  wb.title=`Ore lavorate ${storeLabel} ${MONTHS_UPPER[m-1]} ${year}`;
+  return { wb, filename:`Ore_lavorate_${normalizeArchiveId(storeLabel)}_${MONTHS_UPPER[m-1]}_${year}.xlsx` };
+}
+async function exportHoursByDayExcel(){
+  const btn=document.getElementById("btnHoursExport");
+  if(btn){ btn.disabled=true; btn.textContent="Esporto…"; }
+  try{
+    const { wb, filename }=await buildHoursByDayWorkbook(currentMonth);
+    await downloadWorkbook(wb, filename);
+  }catch(err){
+    console.error(err);
+    alert("Export ore lavorate fallito: "+(err&&err.message?err.message:err));
+  }finally{
+    if(btn){ btn.disabled=false; btn.textContent="Export ore/giorno"; }
+  }
+}
+
+/* ---- Import Turni Modena / Turni HR xlsx ---- */
+function excelCellText(val){
+  if(val==null||val==="") return "";
+  if(typeof val==="object"){
+    if(val instanceof Date) return "";
+    if(val.text!=null) return String(val.text).trim();
+    if(val.result!=null) return String(val.result).trim();
+    if(Array.isArray(val.richText)) return val.richText.map(t=>t.text).join("").trim();
+    if(val.formula!=null && val.result!=null) return String(val.result).trim();
+  }
+  return String(val).trim();
+}
+/** Excel date → YYYY-MM-DD using UTC (ExcelJS often stores midnight UTC). */
+function excelCellDate(val){
+  let dt=null;
+  if(val instanceof Date && !Number.isNaN(val.getTime())) dt=val;
+  else if(val && typeof val==="object" && val.result instanceof Date) dt=val.result;
+  else if(typeof val==="number" && Number.isFinite(val)){
+    // Excel serial date
+    const utc=Math.round((val-25569)*86400*1000);
+    dt=new Date(utc);
+  }
+  if(!dt || Number.isNaN(dt.getTime())) return null;
+  return dt;
+}
+function isoExcelDate(dt){
+  return `${dt.getUTCFullYear()}-${pad(dt.getUTCMonth()+1)}-${pad(dt.getUTCDate())}`;
+}
+function findPersonIdByName(name, nameToId){
+  const resolved=resolvePersonName(name).toUpperCase();
+  if(nameToId[resolved]) return nameToId[resolved];
+  const raw=String(name||"").trim().toUpperCase();
+  if(nameToId[raw]) return nameToId[raw];
+  for(const [k,id] of Object.entries(nameToId)){
+    if(k.includes(raw) || raw.includes(k.split(" ").pop())) return id;
+  }
+  return null;
+}
+function ensurePerson(name, nameToId, addedNames, store){
+  const storeVal=store!=null ? String(store).trim() : "";
+  let pid=findPersonIdByName(name, nameToId);
+  if(pid){
+    if(storeVal){
+      const person=state.people.find(p=>p.id===pid);
+      if(person) person.store=storeVal;
+    }
+    return pid;
+  }
+  const full=resolvePersonName(name) || String(name||"").trim();
+  pid="p"+Math.random().toString(36).slice(2,9);
+  state.people.push(normalizePerson({id:pid,name:full,store:storeVal,hoursWeek:40,startDate:`${getYear()}-01-01`,ferieRes:0,parRes:0}, getYear()));
+  state.turni[pid]={};
+  nameToId[full.toUpperCase()]=pid;
+  nameToId[String(name).trim().toUpperCase()]=pid;
+  if(addedNames) addedNames.add(full+(storeVal?` (${storeVal})`:""));
+  return pid;
+}
+/** Store da titolo foglio tipo "Gennaio 2026 - MB MODENA". */
+function storeFromSheetMeta(ws){
+  const title=excelCellText(ws.getCell(1,2).value) || excelCellText(ws.getCell(1,1).value) || String(ws.name||"");
+  const m=title.match(/\bMB\s+([A-Za-zÀ-ÖØ-öø-ÿ]+)\b/i);
+  if(m) return m[1].toUpperCase();
+  const m2=title.match(/[-–]\s*(?:MB\s+)?([A-Za-zÀ-ÖØ-öø-ÿ]+)\s*$/i);
+  if(m2) return m2[1].toUpperCase();
+  return "";
+}
+function buildNameIndex(){
+  const nameToId={};
+  for(const p of state.people){
+    nameToId[p.name.toUpperCase()]=p.id;
+    const parts=p.name.toUpperCase().split(/\s+/);
+    if(parts[0] && !nameToId[parts[0]]) nameToId[parts[0]]=p.id;
+    const last=parts[parts.length-1];
+    if(last && !nameToId[last]) nameToId[last]=p.id;
+  }
+  for(const [alias,full] of Object.entries(NAME_ALIASES)){
+    const p=state.people.find(x=>x.name.toUpperCase()===String(full).toUpperCase());
+    if(p) nameToId[alias.toUpperCase()]=p.id;
+  }
+  return nameToId;
+}
+function shouldSkipImportText(raw){
+  if(!raw) return true;
+  if(raw.length>55) return true;
+  const u=raw.toUpperCase();
+  if(["CHIUSO","CHIUSURA","0","0.5","0,5"].includes(u)) return true;
+  if(/SE POSSIBILE|PROBABILMENTE|GRAZI|VISITA|ESAMI|EVENTO|RELAIS|COLLEGA|APERTURA|DENT|CHISURA|CHIUSRA/.test(u)) return true;
+  return false;
+}
+/** Nome risorsa in colonna Excel (non note/orari/etichette). */
+function looksLikePersonName(raw){
+  const s=String(raw||"").trim();
+  if(!s || s.length<2 || s.length>45) return false;
+  if(shouldSkipImportText(s)) return false;
+  const u=s.toUpperCase();
+  if(/^(RISORSA|NOME|TOTALE|TOT|NOTE|LEGENDA|ORARIO|TURN[IO]|STRAO|FERIE|PAR|RIPOSO|FESTIVO|MALATTIA|CONGEDO|PERMESSO|ALLATT)/.test(u)) return false;
+  if(/^\d+([.,]\d+)?$/.test(s)) return false;
+  if(/[:/\\|]/.test(s)) return false;
+  // almeno una lettera; ammessi spazi, apostrofi, trattini
+  if(!/[A-Za-zÀ-ÖØ-öø-ÿ]/.test(s)) return false;
+  if(!/^[A-Za-zÀ-ÖØ-öø-ÿ][A-Za-zÀ-ÖØ-öø-ÿ0-9'’.\-\s]*$/.test(s)) return false;
+  return true;
+}
+
+/**
+ * Importa turni da Turni MODENA 2026.xlsx (fogli mensili con date in riga)
+ * oppure dal layout Turni HR (header RISORSA).
+ * Sostituisce i turni dell'anno corrente.
+ */
+async function importTurniHrExcel(file){
+  if(typeof ExcelJS==="undefined") throw new Error("ExcelJS non caricato — apri la cartella via http oppure verifica ../vendor/exceljs.min.js");
+  const wb=new ExcelJS.Workbook();
+  await wb.xlsx.load(await file.arrayBuffer());
+  if(!wb.worksheets.length) throw new Error("File Excel senza fogli");
+
+  const nameToId=buildNameIndex();
+  const year=getYear();
+  let imported=0;
+  const monthsHit=new Set();
+  const seenMonthSheets=new Set();
+  const addedPeople=new Set();
+
+  // clear current year turni before import so past months replace cleanly
+  for(const p of state.people){
+    const cal=state.turni[p.id]||{};
+    for(const ds of Object.keys(cal)){
+      if(ds.startsWith(String(year)+"-")) delete cal[ds];
+    }
+  }
+
+  for(const ws of wb.worksheets){
+    const sheetName=String(ws.name||"").trim();
+    const sheetUp=sheetName.toUpperCase();
+    // skip duplicate "NOVEMBRE 2026 (2)"
+    let monthNum=null;
+    for(let i=0;i<MONTHS_UPPER.length;i++){
+      if(sheetUp.startsWith(MONTHS_UPPER[i]+" "+year) || sheetUp===MONTHS_UPPER[i] || sheetUp.startsWith(MONTHS_UPPER[i]+" 20")){
+        monthNum=i+1; break;
+      }
+    }
+    if(monthNum!=null){
+      if(seenMonthSheets.has(monthNum) && /\(\s*2\s*\)/.test(sheetUp)) continue;
+      if(!/\(\s*\d+\s*\)/.test(sheetUp)) seenMonthSheets.add(monthNum);
+      else if(seenMonthSheets.has(monthNum)) continue;
+      else seenMonthSheets.add(monthNum);
+    }
+
+    const maxCol=Math.max(ws.actualColumnCount||0, ws.columnCount||0, 20);
+    const maxRow=ws.rowCount||0;
+
+    // Layout Verona/HR con date in riga RISORSA (col 3–9) — va prima del formato Modena
+    let hasRisorsaDates=false;
+    for(let r=1;r<=Math.min(maxRow,80);r++){
+      if(excelCellText(ws.getCell(r,1).value).toUpperCase()!=="RISORSA") continue;
+      let dc=0;
+      for(let c=3;c<=9;c++) if(excelCellDate(ws.getCell(r,c).value)) dc++;
+      if(dc>=3){ hasRisorsaDates=true; break; }
+    }
+    if(hasRisorsaDates){
+      for(let r=1;r<=maxRow;r++){
+        if(excelCellText(ws.getCell(r,1).value).toUpperCase()!=="RISORSA") continue;
+        const colDates={};
+        for(let c=3;c<=9;c++){
+          const dt=excelCellDate(ws.getCell(r,c).value);
+          if(dt) colDates[c]=dt;
+        }
+        if(Object.keys(colDates).length<3) continue;
+        let blockStore="";
+        for(let pr=r+1; pr<=Math.min(r+14, maxRow); pr++){
+          const rowTxts=[3,4,5,6,7,8,9].map(c=>excelCellText(ws.getCell(pr,c).value).toUpperCase());
+          if(rowTxts.filter(t=>["LUNEDI","MARTEDI","MERCOLEDI","GIOVEDI","VENERDI","SABATO","DOMENICA"].includes(t)).length>=3) break;
+          let dateCount=0;
+          for(let c=3;c<=9;c++) if(excelCellDate(ws.getCell(pr,c).value)) dateCount++;
+          if(dateCount>=3) break;
+          const pname=excelCellText(ws.getCell(pr,1).value);
+          if(!pname) continue;
+          if(pname.toUpperCase()==="RISORSA") break;
+          if(pname.toUpperCase().startsWith("TOTALE")) continue;
+          if(!findPersonIdByName(pname, nameToId) && !looksLikePersonName(pname)) continue;
+          const storeTxt=excelCellText(ws.getCell(pr,2).value);
+          if(storeTxt) blockStore=storeTxt;
+          const pid=ensurePerson(pname, nameToId, addedPeople, blockStore || "VERONA");
+          for(const [cStr, dt] of Object.entries(colDates)){
+            if(dt.getUTCFullYear()!==year) continue;
+            const ds=isoExcelDate(dt);
+            const val=excelCellText(ws.getCell(pr, Number(cStr)).value);
+            if(!val || shouldSkipImportText(val)) continue;
+            if(/^(VF|FW|VR)\b/i.test(val)) continue;
+            setEntry(pid, ds, maybeConvertAllattamento(normalizeEntry(val), pid, ds, pname));
+            imported++;
+            monthsHit.add(Number(ds.slice(5,7)));
+          }
+        }
+      }
+      continue;
+    }
+
+    // Detect MODENA format: rows with >=3 real dates (nomi in col B)
+    let hasModenaDates=false;
+    for(let r=1;r<=Math.min(maxRow,60);r++){
+      let dc=0;
+      for(let c=1;c<=maxCol;c++){
+        if(excelCellDate(ws.getCell(r,c).value)) dc++;
+      }
+      if(dc>=3){ hasModenaDates=true; break; }
+    }
+
+    if(hasModenaDates){
+      const sheetStore=storeFromSheetMeta(ws);
+      for(let r=1;r<=maxRow;r++){
+        const dates={};
+        for(let c=1;c<=maxCol;c++){
+          const dt=excelCellDate(ws.getCell(r,c).value);
+          if(dt) dates[c]=dt;
+        }
+        if(Object.keys(dates).length<3) continue;
+        for(let pr=r+1; pr<=Math.min(r+12, maxRow); pr++){
+          let more=0;
+          for(let c=1;c<=maxCol;c++) if(excelCellDate(ws.getCell(pr,c).value)) more++;
+          if(more>=3) break;
+          const pname=excelCellText(ws.getCell(pr,2).value) || excelCellText(ws.getCell(pr,1).value);
+          if(!pname) continue;
+          // già in anagrafica, alias noti, oppure nuovo nome → lo aggiunge
+          if(!findPersonIdByName(pname, nameToId) && !(pname.toUpperCase().trim() in NAME_ALIASES) && !looksLikePersonName(pname)) continue;
+          const pid=ensurePerson(pname, nameToId, addedPeople, sheetStore);
+          for(const [cStr, dt] of Object.entries(dates)){
+            if(dt.getUTCFullYear()!==year) continue;
+            const ds=isoExcelDate(dt);
+            const person=state.people.find(p=>p.id===pid);
+            if(person && !personActiveOn(person, ds)) continue;
+            const raw=excelCellText(ws.getCell(pr, Number(cStr)).value);
+            if(shouldSkipImportText(raw)) continue;
+            let entry=normalizeEntry(raw);
+            if(isEmptyEntry(entry)) continue;
+            if(entry.kind && entry.kind.length>24) continue;
+            // colonna Strao a destra della data (Turni Modena)
+            const straoTxt=excelCellText(ws.getCell(pr, Number(cStr)+1).value);
+            if(straoTxt && !/^STRAO/i.test(straoTxt)){
+              const sn=Number(String(straoTxt).replace(",",".").replace(/[^0-9.]/g,""));
+              if(Number.isFinite(sn) && sn>0) entry.straordinario=sn;
+            }
+            entry=maybeConvertAllattamento(entry, pid, ds, pname);
+            setEntry(pid, ds, entry);
+            imported++;
+            monthsHit.add(Number(ds.slice(5,7)));
+          }
+        }
+      }
+      continue;
+    }
+
+    // Fallback Turni HR (numeri giorno) oppure HR Verona (date complete in header)
+    if(monthNum==null) continue;
+    for(let r=1;r<=maxRow;r++){
+      const a=excelCellText(ws.getCell(r,1).value).toUpperCase();
+      if(a!=="RISORSA") continue;
+      const colDates={};
+      const days=[];
+      let useIsoDates=false;
+      for(let c=3;c<=9;c++){
+        const dt=excelCellDate(ws.getCell(r,c).value);
+        if(dt){ colDates[c]=dt; useIsoDates=true; }
+        const v=ws.getCell(r,c).value;
+        const dayNum=typeof v==="number"?v:Number(v);
+        days.push(Number.isFinite(dayNum)?dayNum:null);
+      }
+      if(useIsoDates && Object.keys(colDates).length<3) continue;
+      if(!useIsoDates && !days.some(Boolean)) continue;
+      // nel layout HR lo STORE è spesso in merge sulla prima riga del blocco
+      let blockStore="";
+      for(let pr=r+1; pr<=Math.min(r+14, maxRow); pr++){
+        const rowTxts=[3,4,5,6,7,8,9].map(c=>excelCellText(ws.getCell(pr,c).value).toUpperCase());
+        if(rowTxts.filter(t=>["LUNEDI","MARTEDI","MERCOLEDI","GIOVEDI","VENERDI","SABATO","DOMENICA"].includes(t)).length>=3) break;
+        let dateCount=0;
+        for(let c=3;c<=9;c++) if(excelCellDate(ws.getCell(pr,c).value)) dateCount++;
+        if(dateCount>=3) break;
+        const pname=excelCellText(ws.getCell(pr,1).value);
+        if(!pname) continue;
+        if(pname.toUpperCase()==="RISORSA") break;
+        if(pname.toUpperCase().startsWith("TOTALE")) continue;
+        if(!findPersonIdByName(pname, nameToId) && !looksLikePersonName(pname)) continue;
+        const storeTxt=excelCellText(ws.getCell(pr,2).value);
+        if(storeTxt) blockStore=storeTxt;
+        const pid=ensurePerson(pname, nameToId, addedPeople, blockStore || "VERONA");
+        if(useIsoDates){
+          for(const [cStr, dt] of Object.entries(colDates)){
+            if(dt.getUTCFullYear()!==year) continue;
+            const ds=isoExcelDate(dt);
+            const val=excelCellText(ws.getCell(pr, Number(cStr)).value);
+            if(!val || shouldSkipImportText(val)) continue;
+            if(/^(VF|FW|VR)\b/i.test(val)) continue; // turno sull'altro negozio Verona
+            setEntry(pid, ds, maybeConvertAllattamento(normalizeEntry(val), pid, ds, pname));
+            imported++;
+            monthsHit.add(Number(ds.slice(5,7)));
+          }
+        }else{
+          days.forEach((dayNum,ci)=>{
+            if(!dayNum) return;
+            const val=excelCellText(ws.getCell(pr,3+ci).value);
+            if(!val || shouldSkipImportText(val)) return;
+            const ds=resolveImportDate(monthNum, dayNum, ci);
+            if(!ds) return;
+            setEntry(pid, ds, maybeConvertAllattamento(normalizeEntry(val), pid, ds, pname));
+            imported++;
+            monthsHit.add(Number(ds.slice(5,7)));
+          });
+        }
+      }
+    }
+  }
+
+  return {
+    imported,
+    months:[...monthsHit].sort((a,b)=>a-b),
+    addedPeople:[...addedPeople]
+  };
+}
+
+function resolveImportDate(month, dayNum, colIndex /*0=Mon*/){
+  const dim=daysInMonth(getYear(), month);
+  if(dayNum>=1 && dayNum<=dim){
+    const dt=new Date(getYear(), month-1, dayNum);
+    if(((dt.getDay()+6)%7)===colIndex) return iso(dt);
+  }
+  if(month>1){
+    const pdim=daysInMonth(getYear(), month-1);
+    if(dayNum>=1 && dayNum<=pdim){
+      const dt=new Date(getYear(), month-2, dayNum);
+      if(((dt.getDay()+6)%7)===colIndex) return iso(dt);
+    }
+  }
+  if(month<12){
+    const ndim=daysInMonth(getYear(), month+1);
+    if(dayNum>=1 && dayNum<=ndim){
+      const dt=new Date(getYear(), month, dayNum);
+      if(((dt.getDay()+6)%7)===colIndex) return iso(dt);
+    }
+  }
+  if(dayNum>=1 && dayNum<=dim) return `${getYear()}-${pad(month)}-${pad(dayNum)}`;
+  return null;
+}
+
+
+function openAddPersonModal(){
+  const y=getYear();
+  showModal(`
+    <h3>Nuovo dipendente</h3>
+    <p class="hint">Puoi inserirlo a metà anno: la maturazione parte dalla data inizio. Imposta subito i residui ferie/PAR già maturati.</p>
+    <label>Nome<input id="mName" value="NUOVO DIPENDENTE"></label>
+    <div class="row">
+      <label>Store<input id="mStore" value="" placeholder="es. MODENA"></label>
+      <label>Ore/sett.<input id="mHours" type="number" value="40"></label>
+    </div>
+    <label>Data inizio<input id="mStartDate" type="date" value="${y}-01-01"></label>
+    <div class="row">
+      <label>Residuo ferie all’ingresso (h)<input id="mFerie" type="number" step="0.001" value="0"></label>
+      <label>Residuo PAR all’ingresso (h)<input id="mParRes" type="number" step="0.001" value="0"></label>
+    </div>
+    <div class="err" id="mErr"></div>
+    <div class="actions">
+      <button type="button" id="mCancel">Annulla</button>
+      <button type="button" class="primary" id="mOk">Aggiungi</button>
+    </div>
+  `, ()=>{
+    document.getElementById("mCancel").onclick=closeModal;
+    document.getElementById("mOk").onclick=()=>{
+      const name=document.getElementById("mName").value.trim();
+      if(!name){ document.getElementById("mErr").textContent="Nome obbligatorio"; return; }
+      const id="p"+Math.random().toString(36).slice(2,9);
+      const person=normalizePerson({
+        id, name,
+        store: document.getElementById("mStore").value.trim(),
+        hoursWeek: Number(document.getElementById("mHours").value)||40,
+        startDate: document.getElementById("mStartDate").value || `${y}-01-01`,
+        ferieRes: Number(document.getElementById("mFerie").value)||0,
+        parRes: Number(document.getElementById("mParRes").value)||0
+      }, y);
+      state.people.push(person);
+      state.turni[id]={};
+      closeModal(); saveState(); renderAll(); showTab("risorse");
+    };
+  });
+}
+
+/** Stato anno successivo: residui = saldi fine anno precedente; niente turni;
+ *  esclude chi è cessato prima del 1° gennaio (non attivo il primo giorno del nuovo anno). */
+function buildRolloverYearState(fromState, fromYear, nextYear){
+  const y=Number(fromYear);
+  const next=Number(nextYear);
+  const jan1=`${next}-01-01`;
+  const snapshot=state;
+  try{
+    state={
+      ...fromState,
+      year:y,
+      people:fromState.people||[],
+      turni:fromState.turni||{},
+      maturato:fromState.maturato||{},
+      goduto:fromState.goduto||{},
+      liberiFittizi:fromState.liberiFittizi||{}
+    };
+    const people=[];
+    for(const p of state.people){
+      if(!personActiveOn(p, jan1)) continue; // cessati: non compaiono nel nuovo anno
+      const b=balancesFor(p, 12);
+      people.push(normalizePerson({
+        ...p,
+        ferieRes: round3(b.ferieSaldo),
+        parRes: round3(b.parSaldo),
+        startDate: p.startDate || `${y}-01-01`,
+        endDate: p.endDate || ""
+      }, next));
+    }
+    const turni={}; for(const p of people) turni[p.id]={};
+    return {
+      year: next,
+      archiveId: normalizeArchiveId(fromState.archiveId || CLOUD_SHOP_ID || "modena"),
+      archiveLabel: fromState.archiveLabel || CLOUD_SHOP_NAME || resolveArchiveLabel(fromState),
+      people,
+      turni,
+      maturato: {},
+      goduto: {},
+      liberiFittizi: {},
+      updatedAt: new Date().toISOString(),
+      fromYear: y
+    };
+  }finally{
+    state=snapshot;
+  }
+}
+
+/** Chiude l'anno corrente e apre il successivo in una cartella OneDrive nuova.
+ *  L'anno vecchio resta nella cartella precedente (non viene cancellato).
+ *  Nota: showDirectoryPicker va chiamato subito dopo il click/confirm, prima di qualsiasi await. */
+async function startNewYear(){
+  const y=getYear();
+  const next=y+1;
+  if(!("showDirectoryPicker" in window)){
+    alert("Questo browser non supporta la selezione cartella. Usa Chrome/Edge.");
+    return;
+  }
+  if(!confirm(
+    `Chiudere l'anno ${y} e aprire il ${next}?\n\n`+
+    `• L'anno ${y} viene salvato nella cartella attuale (non viene cancellato).\n`+
+    `• Subito dopo scegli una cartella OneDrive NUOVA per il ${next}.\n`+
+    `• Residui inizio ${next} = saldi fine ${y}; turni vuoti; cessati esclusi.\n`+
+    `• Per riprendere il ${y}: seleziona la vecchia cartella → Carica archivio.`
+  )) return;
+
+  // 1) picker SUBITO (gesto utente ancora valido: niente await/alert prima)
+  const oldHandle=folderHandle;
+  const oldFolderName=oldHandle ? oldHandle.name : null;
+  let newHandle=null;
+  try{
+    newHandle=await window.showDirectoryPicker({ mode:"readwrite" });
+    if(await newHandle.requestPermission({ mode:"readwrite" })!=="granted"){
+      alert("Permesso di scrittura non concesso sulla cartella nuova.");
+      folderHandle=oldHandle;
+      return;
+    }
+  }catch(e){
+    folderHandle=oldHandle;
+    if(e && e.name==="AbortError"){
+      setFolderStatus("Nuovo anno annullato: cartella non selezionata.");
+      return;
+    }
+    alert("Cartella non selezionata o accesso negato: "+e.message);
+    return;
+  }
+
+  const newState=buildRolloverYearState(state, y, next);
+
+  // 2) salva l'anno corrente nella cartella vecchia (se c'era)
+  try{
+    folderHandle=oldHandle;
+    await saveState(false);
+  }catch(e){
+    folderHandle=oldHandle;
+    alert("Salvataggio anno "+y+" non riuscito: "+e.message);
+    return;
+  }
+
+  // 3) passa al nuovo anno nella cartella nuova
+  folderHandle=newHandle;
+  state=newState;
+  currentMonth=1;
+  setActiveYear(next);
+  setActiveArchive(getArchiveId());
+  localStorage.setItem(storageKey(next), JSON.stringify(state));
+  try{
+    await ensureArchiveFolders();
+    await saveStateToFolder();
+    setFolderStatus(`Anno ${next} creato in ${folderHandle.name}/dati/turni/${yearStateFilename(next)}. Anno ${y} intatto${oldFolderName?` in «${oldFolderName}»`:""}.`);
+  }catch(e){
+    alert("Anno "+next+" creato in locale; scrittura OneDrive non riuscita: "+e.message);
+  }
+  renderAll();
+  showTab("risorse");
+  alert(
+    `Anno ${next} pronto in «${folderHandle.name}».\n`+
+    `Residui aggiornati, turni vuoti, calcoli in automatico.\n`+
+    (oldFolderName?`L'anno ${y} resta in «${oldFolderName}» (Carica archivio per recuperarlo).\n`:``)+
+    `Attendi la sincronizzazione OneDrive prima di usare un altro PC.`
+  );
+}
+
+function showTab(tab){
+  document.querySelectorAll(".main-tabs [data-tab]").forEach(b=>b.classList.toggle("active", b.dataset.tab===tab));
+  document.getElementById("view-turni").classList.toggle("hidden", tab!=="turni");
+  document.getElementById("view-ferie").classList.toggle("hidden", tab!=="ferie");
+  document.getElementById("view-risorse").classList.toggle("hidden", tab!=="risorse");
+}
+
+async function applyCloudRolloverFromPrev(prevYear, targetYear){
+  const prev=await window.parent?.TurniAuth?.loadArchive?.(CLOUD_SHOP_ID, prevYear);
+  // [] e {} sono truthy in JS: esigi almeno un dipendente altrimenti il rollover
+  // "riesce" a vuoto e salta il seed Modena.
+  const prevPeople=Array.isArray(prev?.people) ? prev.people : null;
+  if(!(prev && prevPeople && prevPeople.length>0 && prev.turni && typeof prev.turni==="object")) return false;
+  if(isWrongShopCloudArchive(prev, CLOUD_SHOP_ID, CLOUD_SHOP_NAME)){
+    setFolderStatus(`Archivio ${prevYear} non del negozio corrente (sembra Modena). Correggi il ${prevYear} prima di aprire il ${targetYear}.`);
+    return false;
+  }
+  const prevHydrated=hydrateStateFromObject(prev, CLOUD_SHOP_NAME||CLOUD_SHOP_ID);
+  const beforeCount=(prevHydrated.people||[]).length;
+  state=buildRolloverYearState(prevHydrated, prevYear, targetYear);
+  if(CLOUD_SHOP_ID){
+    state.archiveId=normalizeArchiveId(CLOUD_SHOP_ID);
+    state.archiveLabel=CLOUD_SHOP_NAME || resolveArchiveLabel(state);
+  }
+  // Rollover senza nessuno (tutti cessati / dati vuoti): non considerare successo
+  if(!(state.people||[]).length) return false;
+  currentMonth=1;
+  setActiveYear(targetYear);
+  setActiveArchive(getArchiveId());
+  localStorage.setItem(storageKey(targetYear), JSON.stringify(state));
+  const dropped=beforeCount-state.people.length;
+  try{
+    await saveState(false);
+    setFolderStatus(
+      `Anno ${targetYear} creato da ${prevYear}: residui ferie/PAR riportati`+
+      (dropped>0?`, ${dropped} cessat${dropped===1?"o":"i"} esclus${dropped===1?"o":"i"}`:"")+
+      ` · ${state.people.length} dipendenti · salvato su Firebase`
+    );
+  }catch(e){
+    setFolderStatus(`Anno ${targetYear} preparato da ${prevYear}, ma salvataggio Firebase non riuscito: ${e.message}`);
+  }
+  return true;
+}
+
+function isModenaCloudShop(){
+  return isModenaShopIdOrName(CLOUD_SHOP_ID, CLOUD_SHOP_NAME);
+}
+
+async function seedModenaCloudIfNeeded(targetYear){
+  if(!isModenaCloudShop()) return false;
+  // Seed ufficiale Modena (dipendenti + turni 2026) solo se Firebase è vuoto
+  const seeded=defaultState(Number(targetYear)||DEFAULT_YEAR);
+  seeded.archiveId=normalizeArchiveId(CLOUD_SHOP_ID||"modena");
+  seeded.archiveLabel=CLOUD_SHOP_NAME || "Modena";
+  seeded.year=Number(targetYear)||DEFAULT_YEAR;
+  // I turni seed sono solo per DEFAULT_YEAR (2026)
+  if(Number(seeded.year)!==DEFAULT_YEAR){
+    seeded.turni={};
+    seeded.maturato={};
+    seeded.goduto={};
+    for(const p of seeded.people){ seeded.turni[p.id]={}; }
+  }
+  state=ensureSeedBalances(seeded);
+  currentMonth=Math.min(12, Math.max(1, new Date().getFullYear()===getYear()? new Date().getMonth()+1 : 1));
+  setActiveYear(state.year);
+  setActiveArchive(getArchiveId());
+  localStorage.setItem(storageKey(state.year), JSON.stringify(state));
+  try{
+    await saveState(false);
+    setFolderStatus(`Dati iniziali Modena caricati · ${state.people.length} dipendenti · anno ${state.year}`);
+  }catch(e){
+    setFolderStatus("Seed Modena pronto in locale; salvataggio Firebase non riuscito: "+e.message);
+  }
+  return (state.people||[]).length>0;
+}
+
+async function initCloudFromParent(){
+  if(!CLOUD_MODE) return;
+  document.body.classList.add("cloud-embed");
+  const panel=document.getElementById("archivePanel");
+  if(panel){
+    // Niente box “Archivio cloud” in UI online (resta #folderStatus per messaggi seed)
+    panel.classList.add("hidden");
+    panel.innerHTML=`<div class="status" id="folderStatus"></div>`;
+  }
+  const ny=document.getElementById("btnNewYear");
+  if(ny) ny.classList.add("hidden");
+  const targetYear=CLOUD_YEAR || getYear();
+  state=emptyCloudState(targetYear, CLOUD_SHOP_ID, CLOUD_SHOP_NAME);
+  setActiveYear(targetYear);
+  setActiveArchive(normalizeArchiveId(CLOUD_SHOP_ID||"negozio"));
+  try{
+    const remote=await window.parent?.TurniAuth?.loadArchive?.(CLOUD_SHOP_ID, targetYear);
+    const hasPeople=remote && Array.isArray(remote.people) && remote.people.length>0;
+    const remoteOk=hasPeople && (remote.turni==null || typeof remote.turni==="object");
+    if(remoteOk && !isWrongShopCloudArchive(remote, CLOUD_SHOP_ID, CLOUD_SHOP_NAME)){
+      const hydrated=hydrateStateFromObject({
+        ...remote,
+        turni: remote.turni && typeof remote.turni==="object" ? remote.turni : {}
+      }, CLOUD_SHOP_NAME||CLOUD_SHOP_ID);
+      state=hydrated;
+      if(CLOUD_SHOP_ID){
+        state.archiveId=normalizeArchiveId(CLOUD_SHOP_ID);
+        state.archiveLabel=CLOUD_SHOP_NAME || resolveArchiveLabel(state);
+      }
+      setActiveYear(getYear());
+      setActiveArchive(getArchiveId());
+      localStorage.setItem(storageKey(getYear()), JSON.stringify(state));
+      setFolderStatus("");
+      return;
+    }
+    const prevYear=targetYear-1;
+    if(await applyCloudRolloverFromPrev(prevYear, targetYear)) return;
+    // Modena senza archivio cloud: ripristina il dataset built-in (non lasciare vuoto)
+    if(await seedModenaCloudIfNeeded(targetYear)) return;
+    state=emptyCloudState(targetYear, CLOUD_SHOP_ID, CLOUD_SHOP_NAME);
+    setFolderStatus("");
+  }catch(e){
+    if(await seedModenaCloudIfNeeded(targetYear)) return;
+    state=emptyCloudState(targetYear, CLOUD_SHOP_ID, CLOUD_SHOP_NAME);
+    setFolderStatus("Lettura Firebase non riuscita: "+e.message);
+  }
+  // Rete di sicurezza: se siamo ancora a 0 dipendenti su Modena, forza il seed
+  if(!(state.people||[]).length){
+    await seedModenaCloudIfNeeded(targetYear);
+  }
+}
+
+function init(){
+  document.querySelectorAll(".main-tabs [data-tab]").forEach(btn=>btn.addEventListener("click",()=>showTab(btn.dataset.tab)));
+  document.getElementById("chooseFolder").addEventListener("click", ()=>chooseFolder());
+  document.getElementById("loadArchive").addEventListener("click", ()=>loadArchive());
+  document.getElementById("btnExport").addEventListener("click", exportMonthExcel);
+  document.getElementById("btnHoursExport")?.addEventListener("click", exportHoursByDayExcel);
+  document.getElementById("addPerson").addEventListener("click",()=>{
+    openAddPersonModal();
+  });
+  document.getElementById("btnNewYear").addEventListener("click", startNewYear);
+  document.addEventListener("click", (e)=>{
+    if(!e.target.closest("#cellMenu") && !e.target.closest("td.cell")) closeMenu();
+  });
+  document.getElementById("modalBack").addEventListener("click",(e)=>{ if(e.target.id==="modalBack") closeModal(); });
+
+  const boot=async()=>{
+    if(CLOUD_MODE) await initCloudFromParent();
+    else if(!localStorage.getItem(storageKey(getYear()))) saveState(false);
+    renderAll(); showTab("turni");
+  };
+  boot();
+}
+init();
+
+</script>
+</body>
+</html>

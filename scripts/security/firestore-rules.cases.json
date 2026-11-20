@@ -1,0 +1,178 @@
+{
+  "description": "Casi di test per firestore.rules (Auth diretta, no loginKeys pubblici). Dati sintetici.",
+  "projectId": "pianificatoreturni-rules-test",
+  "fixtures": {
+    "users": {
+      "uid-admin": {
+        "username": "admin",
+        "role": "admin",
+        "shopId": null,
+        "active": true,
+        "mustChangePassword": false
+      },
+      "uid-store-a": {
+        "username": "store.demo01",
+        "role": "store",
+        "shopId": "demo01",
+        "shopName": "Demo Store A",
+        "active": true,
+        "mustChangePassword": false
+      },
+      "uid-store-b": {
+        "username": "store.demo02",
+        "role": "store",
+        "shopId": "demo02",
+        "shopName": "Demo Store B",
+        "active": true,
+        "mustChangePassword": false
+      }
+    },
+    "shops": {
+      "demo01": { "name": "Demo Store A", "active": true },
+      "demo02": { "name": "Demo Store B", "active": true }
+    },
+    "loginKeys": {
+      "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef": {
+        "uid": "uid-store-a",
+        "username": "store.demo01",
+        "authSecret": "LegacySecretValue12"
+      }
+    },
+    "staffSecrets": {
+      "uid-store-a": {
+        "authSecret": "LegacySecretValue12",
+        "keyId": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+        "username": "store.demo01",
+        "mustChangePassword": false
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "unauth-archive-denied",
+      "auth": null,
+      "op": "get",
+      "path": "archives/demo01/years/2026",
+      "expect": "deny"
+    },
+    {
+      "id": "store-a-read-own",
+      "auth": "uid-store-a",
+      "op": "get",
+      "path": "archives/demo01/years/2026",
+      "expect": "allow"
+    },
+    {
+      "id": "store-a-read-other-denied",
+      "auth": "uid-store-a",
+      "op": "get",
+      "path": "archives/demo02/years/2026",
+      "expect": "deny"
+    },
+    {
+      "id": "store-a-write-other-denied",
+      "auth": "uid-store-a",
+      "op": "set",
+      "path": "archives/demo02/years/2026",
+      "data": { "shopId": "demo02", "year": 2026, "people": [] },
+      "expect": "deny"
+    },
+    {
+      "id": "store-a-write-own-ok",
+      "auth": "uid-store-a",
+      "op": "set",
+      "path": "archives/demo01/years/2026",
+      "data": { "shopId": "demo01", "year": 2026, "people": [], "turni": {} },
+      "expect": "allow"
+    },
+    {
+      "id": "store-a-write-tampered-shopId-denied",
+      "auth": "uid-store-a",
+      "op": "set",
+      "path": "archives/demo01/years/2026",
+      "data": { "shopId": "demo02", "year": 2026, "people": [] },
+      "expect": "deny"
+    },
+    {
+      "id": "store-cannot-escalate-role",
+      "auth": "uid-store-a",
+      "op": "update",
+      "path": "users/uid-store-a",
+      "data": { "role": "admin" },
+      "expect": "deny"
+    },
+    {
+      "id": "store-cannot-change-shopId",
+      "auth": "uid-store-a",
+      "op": "update",
+      "path": "users/uid-store-a",
+      "data": { "shopId": "demo02" },
+      "expect": "deny"
+    },
+    {
+      "id": "store-can-clear-mustChangePassword",
+      "auth": "uid-store-a",
+      "op": "update",
+      "path": "users/uid-store-a",
+      "data": { "mustChangePassword": false },
+      "expect": "allow"
+    },
+    {
+      "id": "unauth-loginKeys-get-denied",
+      "auth": null,
+      "op": "get",
+      "path": "loginKeys/0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      "expect": "deny"
+    },
+    {
+      "id": "unauth-loginKeys-list-denied",
+      "auth": null,
+      "op": "list",
+      "path": "loginKeys",
+      "expect": "deny"
+    },
+    {
+      "id": "store-loginKeys-get-denied",
+      "auth": "uid-store-a",
+      "op": "get",
+      "path": "loginKeys/0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      "expect": "deny"
+    },
+    {
+      "id": "admin-loginKeys-get-denied",
+      "auth": "uid-admin",
+      "op": "get",
+      "path": "loginKeys/0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      "expect": "deny"
+    },
+    {
+      "id": "unauth-staffSecrets-get-denied",
+      "auth": null,
+      "op": "get",
+      "path": "staffSecrets/uid-store-a",
+      "expect": "deny"
+    },
+    {
+      "id": "store-staffSecrets-create-denied",
+      "auth": "uid-store-a",
+      "op": "set",
+      "path": "staffSecrets/uid-store-a",
+      "data": { "authSecret": "ShouldNotWriteSecret1", "keyId": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef", "username": "store.demo01", "mustChangePassword": false },
+      "expect": "deny"
+    },
+    {
+      "id": "admin-list-users-ok",
+      "auth": "uid-admin",
+      "op": "list",
+      "path": "users",
+      "expect": "allow"
+    },
+    {
+      "id": "store-list-users-denied",
+      "auth": "uid-store-a",
+      "op": "list",
+      "path": "users",
+      "expect": "deny"
+    }
+  ]
+}

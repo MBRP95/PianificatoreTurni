@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manuale store — Pianificatore Turni</title>
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --brand:#0176D3; --brand-dark:#032D60; --brand-hover:#014486;
+  --ink:#181818; --muted:#706E6B; --bg:#F3F2F2; --panel:#fff;
+  --line:#E5E5E5; --line-strong:#C9C7C5;
+  --shadow:0 2px 4px rgba(0,0,0,.07), 0 0 1px rgba(0,0,0,.12);
+  --radius:4px;
+  font-family:"Source Sans 3","Segoe UI",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;color:var(--ink);background:var(--bg);line-height:1.5}
+a{color:var(--brand)}
+.gh{background:var(--brand-dark);color:#fff;position:sticky;top:0;z-index:20}
+.gh .wrap{max-width:920px;margin:0 auto;padding:0 16px;min-height:48px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:#fff}
+.mark{width:28px;height:28px;border-radius:6px;background:var(--brand);display:grid;place-items:center}
+.mark svg{width:16px;height:16px}
+.brand strong{display:block;font-size:1rem}
+.brand span{display:block;font-size:.75rem;opacity:.78;font-weight:500}
+.gh .acts{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.gh a.back,.gh a.pdf{color:#fff;text-decoration:none;border:1px solid rgba(255,255,255,.28);border-radius:var(--radius);padding:6px 12px;font-size:.875rem;font-weight:600}
+.gh a.pdf{background:var(--brand);border-color:var(--brand)}
+@media print{
+  .gh{position:static}
+  .gh .acts,.gh a.back,.gh a.pdf,.no-print{display:none!important}
+  body{background:#fff}
+  figure{break-inside:avoid;box-shadow:none}
+  section{break-inside:avoid-page}
+}
+main{max-width:920px;margin:0 auto;padding:28px 16px 64px}
+h1{margin:0 0 8px;font-size:1.75rem;color:var(--brand-dark);letter-spacing:-.02em}
+.lead{margin:0 0 22px;color:var(--muted);font-size:1.05rem}
+.note{background:#EAF5FE;border:1px solid #9dc3e6;border-radius:var(--radius);padding:12px 14px;margin:0 0 28px;font-size:.92rem}
+nav.toc{background:var(--panel);border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);padding:16px 18px;margin-bottom:32px}
+nav.toc h2{margin:0 0 10px;font-size:.95rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+nav.toc ol{margin:0;padding-left:1.2rem}
+nav.toc li{margin:6px 0}
+section{margin:0 0 40px;scroll-margin-top:64px}
+section h2{margin:0 0 8px;font-size:1.25rem;color:var(--brand-dark)}
+section p,section li{font-size:.98rem}
+section ul{margin:8px 0 14px;padding-left:1.2rem}
+figure{margin:16px 0 8px;background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:hidden;box-shadow:var(--shadow)}
+figure img{display:block;width:100%;height:auto}
+figcaption{padding:10px 12px;font-size:.85rem;color:var(--muted);border-top:1px solid var(--line)}
+.steps{counter-reset:step}
+.steps li{margin:8px 0}
+kbd{font:inherit;font-weight:700;background:#f4f6f8;border:1px solid var(--line);border-radius:4px;padding:1px 6px}
+footer{margin-top:48px;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);font-size:.88rem}
+</style>
+</head>
+<body>
+<header class="gh">
+  <div class="wrap">
+    <a class="brand" href="../">
+      <div class="mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="15" rx="2" fill="#fff"/><rect x="3" y="5" width="18" height="4" fill="#0176D3"/><rect x="6" y="12" width="4" height="3" fill="#0176D3"/></svg>
+      </div>
+      <div><strong>Pianificatore Turni</strong><span>Manuale store</span></div>
+    </a>
+    <div class="acts">
+      <a class="pdf" href="./Pianificatore-Turni-manuale-store.pdf" download>Scarica PDF</a>
+      <a class="back" href="../">Torna al login</a>
+    </div>
+  </div>
+</header>
+
+<main>
+  <h1>Manuale d’uso — punto vendita</h1>
+  <p class="lead">Guida rapida per l’account del negozio: accesso, turni, ferie/PAR ed export. Le immagini usano dati di esempio (Demo Store).</p>
+  <p class="note">Questo manuale riguarda solo lo <strong>store</strong>. La parte admin (creazione negozi) non è inclusa.<span class="no-print"> Puoi anche <a href="./Pianificatore-Turni-manuale-store.pdf" download>scaricare il PDF</a>.</span></p>
+
+  <nav class="toc" aria-label="Indice">
+    <h2>Contenuti</h2>
+    <ol>
+      <li><a href="#accesso">Accesso</a></li>
+      <li><a href="#home">Home negozio</a></li>
+      <li><a href="#turni">Pianificare i turni</a></li>
+      <li><a href="#menu">Menu della cella</a></li>
+      <li><a href="#ferie">Calcolo ferie e PAR</a></li>
+      <li><a href="#export">Export Excel</a></li>
+      <li><a href="#password">Password e uscita</a></li>
+    </ol>
+  </nav>
+
+  <section id="accesso">
+    <h2>1. Accesso</h2>
+    <p>Apri il link del Pianificatore e accedi con username e password del tuo punto vendita (es. <kbd>store.demo01</kbd>).</p>
+    <ul>
+      <li>Al <strong>primo accesso</strong> ti verrà chiesto di impostare una nuova password.</li>
+      <li>Se le credenziali non sono corrette, compare un messaggio sotto il pulsante Entra.</li>
+    </ul>
+    <figure>
+      <img src="./shots/01-login.png" alt="Schermata di login del Pianificatore Turni">
+      <figcaption>Schermata di accesso (dati di esempio).</figcaption>
+    </figure>
+  </section>
+
+  <section id="home">
+    <h2>2. Home negozio</h2>
+    <p>Dopo il login vedi il nome del negozio. Scegli l’anno e apri il pianificatore.</p>
+    <ol class="steps">
+      <li>Seleziona l’<strong>Anno</strong> (es. 2026).</li>
+      <li>Clicca <strong>Apri pianificatore</strong>.</li>
+      <li>Da qui puoi anche aprire questo manuale, cambiare password o uscire.</li>
+    </ol>
+    <figure>
+      <img src="./shots/02-store.png" alt="Home del negozio Demo Store con pulsante Apri pianificatore">
+      <figcaption>Home store con selezione anno.</figcaption>
+    </figure>
+  </section>
+
+  <section id="turni">
+    <h2>3. Pianificare i turni</h2>
+    <p>Nel pianificatore hai tre schede: <strong>Turni</strong>, <strong>Calcolo ferie / PAR</strong>, <strong>Dipendenti</strong>.</p>
+    <ul>
+      <li>Scegli il <strong>mese</strong> con i pulsanti Gen–Dic.</li>
+      <li>La griglia mostra le settimane come nel foglio Turni HR: risorsa, store, giorni, totale straordinari.</li>
+      <li>I giorni fuori data inizio/fine della persona risultano disabilitati.</li>
+      <li>Una <strong>nota</strong> sotto l’orario serve per testi liberi (es. ritiro documenti), senza cambiare il tipo di turno.</li>
+    </ul>
+    <figure>
+      <img src="./shots/03-turni.png" alt="Griglia turni di novembre con dipendenti Demo Store">
+      <figcaption>Esempio di mese Turni (Demo Store).</figcaption>
+    </figure>
+  </section>
+
+  <section id="menu">
+    <h2>4. Menu della cella</h2>
+    <p>Clicca una cella del giorno per aprire il menu:</p>
+    <ul>
+      <li><strong>Ore lavorate</strong> — fascia oraria (es. 9-17, 11.30-19.30).</li>
+      <li><strong>PAR</strong> — ore di permesso (entro il tetto giornaliero).</li>
+      <li><strong>Allattamento</strong> — ore dedicate (non scalano il goduto PAR).</li>
+      <li><strong>Nota</strong> — testo libero sul giorno.</li>
+      <li>Assenze / riposo: RIPOSO, FERIE, FESTIVO, CONGEDO, MALATTIA, PERMESSO STUDIO, FUORI SEDE.</li>
+      <li><strong>Svuota</strong> — cancella il contenuto della cella.</li>
+    </ul>
+    <figure>
+      <img src="./shots/04-menu.png" alt="Menu contestuale su una cella turno">
+      <figcaption>Menu cella su un turno di lavoro.</figcaption>
+    </figure>
+  </section>
+
+  <section id="ferie">
+    <h2>5. Calcolo ferie e PAR</h2>
+    <p>La scheda <strong>Calcolo ferie / PAR</strong> mostra, mese per mese, maturato, goduto e saldi. I valori con <kbd>A</kbd> sono automatici; con <kbd>M</kbd> sono manuali (clic per passare da uno all’altro).</p>
+    <h3 style="font-size:1.05rem;margin:16px 0 6px;color:var(--brand-dark)">Liberi fittizi</h3>
+    <ul>
+      <li><strong>SI</strong> (automatico) finché il mese <em>non</em> è interamente compilato per quella risorsa: si usa la stima Excel <code>ROUNDUP(giorni / 3,5)</code>.</li>
+      <li>Se hai messo solo alcuni giorni di <strong>FERIE</strong> o <strong>PAR</strong>, il mese non è completo → restano liberi fittizi <strong>SI</strong>.</li>
+      <li><strong>NO</strong> automatico solo quando <em>ogni</em> giorno in forza ha un turno o un’assenza.</li>
+      <li>Puoi <strong>forzare</strong> SI/NO cliccando il pulsante; la <kbd>A</kbd> indica che è ancora automatico. Accanto vedi quanti liberi entrano nel calcolo.</li>
+    </ul>
+    <p>In fondo trovi il <strong>riepilogo annuale</strong> (totali e saldi di fine anno).</p>
+    <figure>
+      <img src="./shots/05-ferie.png" alt="Tabella ferie con colonna Liberi fittizi SI/NO">
+      <figcaption>Colonna Liberi fittizi nella tabella mensile (dati di esempio).</figcaption>
+    </figure>
+  </section>
+
+  <section id="export">
+    <h2>6. Export Excel</h2>
+    <ul>
+      <li><strong>Esporta mese Excel (HR)</strong> — foglio stile Turni HR del mese aperto.</li>
+      <li><strong>Export ore/giorno</strong> (pulsante in basso a destra) — ore lavorate per giorno e per risorsa, utile per controlli.</li>
+    </ul>
+    <p>I file si scaricano sul computer; in uso locale con cartella OneDrive possono anche essere copiati in <code>documenti/</code>.</p>
+  </section>
+
+  <section id="password">
+    <h2>7. Password e uscita</h2>
+    <ul>
+      <li><strong>Cambia password</strong> — dall’header, dopo il login.</li>
+      <li><strong>Esci</strong> — chiude la sessione e torna al login.</li>
+      <li>Con il pianificatore aperto puoi cambiare anno dalla barra in alto o chiudere il pianificatore per tornare alla home negozio.</li>
+    </ul>
+  </section>
+
+  <footer>
+    Pianificatore Turni · manuale store · le schermate mostrano dati fittizi (Demo Store).
+  </footer>
+</main>
+</body>
+</html>

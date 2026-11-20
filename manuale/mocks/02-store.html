@@ -1,0 +1,34 @@
+<!DOCTYPE html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{--brand:#0176D3;--brand-dark:#032D60;--ink:#181818;--muted:#706E6B;--bg:#F3F2F2;--line:#E5E5E5;--radius:4px;font-family:"Source Sans 3","Segoe UI",system-ui,sans-serif}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink)}
+.gh{background:var(--brand-dark);color:#fff;min-height:48px;display:flex;align-items:center;padding:0 16px;gap:10px}
+.mark{width:28px;height:28px;border-radius:6px;background:var(--brand);display:grid;place-items:center}
+.mark svg{width:16px;height:16px}
+.gh .txt strong{display:block;font-size:1rem}.gh .txt span{display:block;font-size:.75rem;opacity:.78}
+.gh .acts{margin-left:auto;display:flex;gap:8px}
+.gh .acts button{appearance:none;border:1px solid rgba(255,255,255,.28);background:transparent;color:#fff;border-radius:4px;padding:6px 12px;font:inherit;font-weight:600}
+main{max-width:900px;margin:24px auto;padding:0 16px}
+.panel{background:#fff;border:1px solid var(--line);border-radius:4px;padding:20px;box-shadow:0 2px 4px rgba(0,0,0,.07)}
+h2{margin:0 0 6px;color:var(--brand-dark)}
+.hint{color:var(--muted);margin:0 0 14px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+select{padding:8px 10px;border:1px solid #C9C7C5;border-radius:4px;font:inherit}
+.btn{border:1px solid #C9C7C5;background:#fff;border-radius:4px;padding:8px 14px;font:inherit;font-weight:650;text-decoration:none;color:inherit}
+.btn.p{background:var(--brand);border-color:var(--brand);color:#fff}
+</style></head><body>
+<header class="gh">
+  <div class="mark"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="15" rx="2" fill="#fff"/><rect x="3" y="5" width="18" height="4" fill="#0176D3"/></svg></div>
+  <div class="txt"><strong>Pianificatore Turni</strong><span>Negozio · Demo Store</span></div>
+  <div class="acts"><button type="button">Cambia password</button><button type="button">Esci</button></div>
+</header>
+<main><div class="panel">
+  <h2>Demo Store</h2>
+  <p class="hint">Scegli l’anno e apri il pianificatore turni.</p>
+  <div class="row">
+    <label style="font-weight:650">Anno <select><option>2026</option></select></label>
+    <button class="btn p" type="button">Apri pianificatore</button>
+    <a class="btn" href="../index.html">Manuale</a>
+  </div>
+</div></main>
+</body></html>

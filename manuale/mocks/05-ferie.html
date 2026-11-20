@@ -1,0 +1,36 @@
+<!DOCTYPE html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{--brand:#0176D3;--brand-dark:#032D60;--ink:#181818;--muted:#706E6B;--bg:#F3F2F2;--line:#E5E5E5;--pos:#2E844A;--neg:#BA0517;font-family:"IBM Plex Sans","Segoe UI",system-ui,sans-serif}
+*{box-sizing:border-box}body{margin:0;padding:16px;background:var(--bg);color:var(--ink)}
+.panel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:0 10px 28px rgba(24,39,56,.07)}
+h2{margin:0 0 6px;color:var(--brand-dark);font-size:1.02rem}
+.hint{color:var(--muted);font-size:.85rem;margin:0 0 14px;line-height:1.45}
+h3{margin:0 0 8px;font-size:.95rem}
+table{width:100%;border-collapse:collapse;font-size:.86rem;background:#fff}
+th,td{border-bottom:1px solid var(--line);padding:8px 7px;text-align:left;white-space:nowrap}
+th{color:var(--muted);font-size:.74rem;text-transform:uppercase;letter-spacing:.04em}
+.num{text-align:right!important;font-variant-numeric:tabular-nums}
+.pos{color:var(--pos);font-weight:700}.neg{color:var(--neg);font-weight:700}
+.fittizi-wrap{display:inline-flex;align-items:center;gap:6px;justify-content:flex-end}
+.fittizi-sw{min-width:52px;padding:4px 8px;font-size:.7rem;font-weight:800;border-radius:6px;border:1px solid}
+.si{background:#EAF5FE;border-color:#9dc3e6;color:#014486}
+.no{background:#f4f6f8;border-color:#c9c7c5;color:#3e3e3c}
+.fittizi-a{margin-left:4px;font-size:.65rem;opacity:.75}
+.fittizi-liberi{font-size:.78rem;color:var(--muted)}
+.mode{display:inline-block;min-width:28px;padding:4px 6px;font-size:.7rem;font-weight:800;border-radius:6px;background:#EAF5FE;border:1px solid #b7d7cb;color:var(--brand);margin-right:4px}
+</style></head><body>
+<div class="panel">
+  <h2>Calcolo ferie e PAR — mese per mese</h2>
+  <p class="hint">Liberi fittizi = SI finché il mese non è tutto compilato. Solo FERIE/PAR non bastano. La A indica automatico.</p>
+  <h3>Novembre 2026</h3>
+  <table>
+    <thead><tr><th>Risorsa</th><th>Liberi fittizi</th><th>Ferie gg</th><th>PAR h</th><th>F maturato</th><th>F goduto</th><th>F saldo</th><th>PAR maturato</th><th>PAR goduto</th><th>PAR saldo</th></tr></thead>
+    <tbody>
+      <tr><td>LUCA BIANCHI</td><td class="num"><span class="fittizi-wrap"><button class="fittizi-sw si" type="button">SI<span class="fittizi-a">A</span></button><span class="fittizi-liberi">9</span></span></td><td class="num">1</td><td class="num">0</td><td class="num"><span class="mode">A</span>98,462</td><td class="num"><span class="mode">A</span>8</td><td class="num pos">110,5</td><td class="num"><span class="mode">A</span>64</td><td class="num"><span class="mode">A</span>0</td><td class="num pos">80</td></tr>
+      <tr><td>SARA NERI</td><td class="num"><span class="fittizi-wrap"><button class="fittizi-sw no" type="button">NO</button><span class="fittizi-liberi">8</span></span></td><td class="num">0</td><td class="num">4</td><td class="num"><span class="mode">A</span>72,1</td><td class="num"><span class="mode">A</span>16</td><td class="num pos">61,1</td><td class="num"><span class="mode">A</span>48</td><td class="num"><span class="mode">A</span>12</td><td class="num pos">44</td></tr>
+      <tr><td>PAOLO VERDI</td><td class="num"><span class="fittizi-wrap"><button class="fittizi-sw si" type="button">SI<span class="fittizi-a">A</span></button><span class="fittizi-liberi">9</span></span></td><td class="num">1</td><td class="num">0</td><td class="num"><span class="mode">A</span>55,0</td><td class="num"><span class="mode">A</span>24</td><td class="num neg">-2,3</td><td class="num"><span class="mode">A</span>40</td><td class="num"><span class="mode">A</span>8</td><td class="num pos">52</td></tr>
+      <tr><td>ELENA CONTI</td><td class="num"><span class="fittizi-wrap"><button class="fittizi-sw si" type="button">SI<span class="fittizi-a">A</span></button><span class="fittizi-liberi">9</span></span></td><td class="num">2</td><td class="num">0</td><td class="num"><span class="mode">A</span>81,2</td><td class="num"><span class="mode">A</span>16</td><td class="num pos">80,2</td><td class="num"><span class="mode">A</span>52</td><td class="num"><span class="mode">A</span>0</td><td class="num pos">64</td></tr>
+    </tbody>
+  </table>
+</div>
+</body></html>

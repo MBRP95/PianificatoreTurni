@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Diagnostica Firebase — Pianificatore</title>
+<style>
+body{font-family:system-ui,sans-serif;max-width:640px;margin:32px auto;padding:0 16px;line-height:1.45}
+label{display:block;margin:10px 0;font-weight:600}
+input{width:100%;padding:10px;margin-top:4px;box-sizing:border-box}
+button{margin-top:12px;padding:10px 14px;font-weight:700;cursor:pointer}
+pre{background:#f4f6f8;padding:12px;border-radius:8px;overflow:auto;white-space:pre-wrap;font-size:13px}
+.ok{color:#0f6e56}.err{color:#b00020}
+</style>
+</head>
+<body>
+<h1>Diagnostica login</h1>
+<p>Verifica Auth diretta (password umana = password Firebase Auth). Non usa <code>loginKeys</code>.</p>
+<label>Username<input id="user" value="admin"></label>
+<label>Password<input id="pw" type="password" autocomplete="current-password"></label>
+<button type="button" id="go">Esegui test</button>
+<pre id="out">In attesa…</pre>
+<p><a href="./index.html">← Login</a> · <a href="./bootstrap-admin.html">Bootstrap</a></p>
+
+<script src="./js/firebase-config.js?v=4"></script>
+<script src="./js/auth.js?v=4"></script>
+<script type="module" src="./js/firebase-init.js?v=4"></script>
+<script>
+const out=document.getElementById("out");
+function line(msg, cls){
+  const span=cls?`<span class="${cls}">`:"";
+  const end=cls?"</span>":"";
+  out.innerHTML += span + msg + end + "\n";
+}
+async function waitReady(){
+  if(window.firebaseReady||window.firebaseConfigMissing) return;
+  await new Promise(r=>window.addEventListener("firebase-ready",r,{once:true}));
+}
+document.getElementById("go").onclick=async()=>{
+  out.textContent="";
+  await waitReady();
+  const api=window.firebaseApi;
+  const cfg=window.TURNI_FIREBASE_CONFIG||{};
+  line("projectId: "+(cfg.projectId||"?"));
+  line("authDomain: "+(cfg.authDomain||"?"));
+  if(window.firebaseConfigMissing||!api){ line("Firebase non pronto", "err"); return; }
+
+  const username=document.getElementById("user").value.trim();
+  const password=document.getElementById("pw").value;
+  const email=TurniAuth.staffEmail(username);
+
+  // 1 settings
+  try{
+    const s=await api.getDoc(api.doc(api.db,"settings","initialized"));
+    line("1 settings/initialized: "+(s.exists()?"OK exists":"MISSING"), s.exists()?"ok":"err");
+  }catch(e){ line("1 settings/initialized FAIL: "+e.code+" "+e.message,"err"); }
+
+  // 2 loginKeys must be unreadable (even with guessed id)
+  try{
+    const fakeId="0".repeat(64);
+    await api.getDoc(api.doc(api.db,"loginKeys",fakeId));
+    line("2 loginKeys get: INATTESO (dovrebbe essere negato)","err");
+  }catch(e){
+    line("2 loginKeys get pubblico: negato ("+(e.code||e.message)+") — OK","ok");
+  }
+
+  // 3 Auth sign-in with human password
+  let cred=null;
+  try{
+    cred=await api.signInWithEmailAndPassword(api.auth, email, password);
+    line("3 Auth signIn (password umana): OK uid="+cred.user.uid,"ok");
+    try{ await cred.user.getIdToken(true); line("3 getIdToken: OK","ok"); }catch(e){ line("3 getIdToken: "+e.message,"err"); }
+  }catch(e){
+    line("3 Auth signIn FAIL: "+e.code+" "+e.message,"err");
+  }
+
+  if(!cred){ line("Stop: senza Auth non si legge users.","err"); return; }
+
+  // 4 users
+  try{
+    const u=await api.getDoc(api.doc(api.db,"users",cred.user.uid));
+    if(u.exists()){
+      const d=u.data();
+      line("4 users/"+cred.user.uid+": OK role="+d.role+" active="+d.active+" user="+d.username+" mustChange="+d.mustChangePassword,"ok");
+    }else line("4 users: DOC MANCANTE per questo uid","err");
+  }catch(e){ line("4 users FAIL: "+e.code+" "+e.message,"err"); }
+
+  // 5 staffSecrets (legacy; assente è OK)
+  try{
+    const s=await api.getDoc(api.doc(api.db,"staffSecrets",cred.user.uid));
+    line("5 staffSecrets: "+(s.exists()?"presente (legacy, andrà rimosso al prossimo cambio password)":"assente (OK Auth diretta)"), s.exists()?"ok":"ok");
+  }catch(e){ line("5 staffSecrets FAIL: "+e.code+" "+e.message,"err"); }
+
+  // 6 TurniAuth.login wrapper
+  try{
+    await api.signOut(api.auth);
+    const r=await TurniAuth.loginWithUsernamePassword(username, password);
+    line("6 TurniAuth.login: OK role="+r.profile.role+" authMode="+r.authMode,"ok");
+    await api.signOut(api.auth);
+  }catch(e){ line("6 TurniAuth.login FAIL: "+(e.message||e),"err"); }
+
+  line("Fine.");
+};
+</script>
+</body>
+</html>

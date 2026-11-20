@@ -1,0 +1,16 @@
+Cartella archivio Verona 2026 (Giallo + Rosso, stesso personale)
+================================================================
+
+Come usarla su OneDrive
+1. Copia tutta questa cartella "verona-2026" su OneDrive
+   (puoi rinominarla, es. "Turni Verona 2026").
+2. Apri il Pianificatore in Chrome/Edge.
+3. Seleziona cartella OneDrive → scegli questa cartella → Carica archivio.
+
+Contiene
+- dati/turni/pianificatore-turni-2026.json
+  7 dipendenti condivisi tra Verona Giallo e Verona Rosso.
+  I marcatori VF/FW (turno sull'altro negozio) sono già risolti
+  con l'orario reale dell'altro file Excel.
+
+Modena resta in un'altra cartella: i due archivi non si sovrascrivono.

@@ -1,0 +1,129 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+    function userExists() {
+      return signedIn() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+    function userData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    function activeUser() {
+      return userExists() && userData().active == true;
+    }
+    function isAdmin() {
+      return activeUser() && userData().role == 'admin';
+    }
+    function isStore() {
+      return activeUser() && userData().role == 'store';
+    }
+    function storeOwnsShop(shopId) {
+      return isStore() && userData().shopId == shopId;
+    }
+    function bootstrapOpen() {
+      return !exists(/databases/$(database)/documents/settings/initialized);
+    }
+
+    match /settings/initialized {
+      allow get: if true;
+      allow create: if bootstrapOpen() && signedIn();
+      allow update, delete: if isAdmin();
+    }
+
+    match /users/{userId} {
+      // Own-uid prima (niente dipendenza da isAdmin / get ricorsivo).
+      allow get: if signedIn() && request.auth.uid == userId;
+      allow get: if isAdmin();
+      allow list: if isAdmin();
+      allow update: if signedIn() &&
+        request.auth.uid == userId &&
+        resource.data.role == 'store' &&
+        resource.data.active == true &&
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['mustChangePassword', 'updatedAt']) &&
+        request.resource.data.mustChangePassword == false;
+      allow update: if signedIn() &&
+        request.auth.uid == userId &&
+        resource.data.role == 'admin' &&
+        resource.data.active == true &&
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['mustChangePassword', 'updatedAt']) &&
+        request.resource.data.mustChangePassword == false;
+      allow update: if isAdmin() &&
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['mustChangePassword', 'updatedAt', 'active', 'displayName', 'shopName']);
+      // Bootstrap: primo admin (prima che esista settings/initialized)
+      allow create: if bootstrapOpen() &&
+        signedIn() &&
+        request.auth.uid == userId &&
+        request.resource.data.role == 'admin' &&
+        request.resource.data.username == 'admin' &&
+        request.resource.data.shopId == null &&
+        request.resource.data.active == true &&
+        request.resource.data.mustChangePassword == true;
+      allow create: if isAdmin() &&
+        request.resource.data.keys().hasOnly([
+          'username', 'displayName', 'role', 'shopId', 'shopName',
+          'active', 'mustChangePassword', 'createdAt', 'updatedAt'
+        ]) &&
+        request.resource.data.username is string &&
+        request.resource.data.username.matches('^[a-z0-9._-]{3,40}$') &&
+        request.resource.data.role in ['store', 'admin'] &&
+        request.resource.data.active == true &&
+        request.resource.data.mustChangePassword == true &&
+        (
+          (request.resource.data.role == 'admin' &&
+            request.resource.data.shopId == null) ||
+          (request.resource.data.role == 'store' &&
+            request.resource.data.shopId is string &&
+            request.resource.data.shopId.matches('^[a-z0-9-]{2,40}$') &&
+            exists(/databases/$(database)/documents/shops/$(request.resource.data.shopId)))
+        );
+      allow delete: if isAdmin() &&
+        request.auth.uid != userId &&
+        resource.data.username != 'admin';
+    }
+
+    // Legacy: loginKeys non è più usato dal client.
+    // Nessuna lettura (anche get singolo) — elimina l’oracolo per brute-force sulle password.
+    match /loginKeys/{keyId} {
+      allow read: if false;
+      allow create, update: if false;
+      // Delete consentito a admin o al proprietario del mapping (cleanup post-migrazione).
+      allow delete: if isAdmin() ||
+        (signedIn() && resource.data.uid == request.auth.uid);
+    }
+
+    // Legacy: staffSecrets non memorizza più secret/password.
+    // Solo delete per bonifica; get limitato a owner/admin per eventuale cleanup client.
+    match /staffSecrets/{userId} {
+      allow get: if signedIn() && (request.auth.uid == userId || isAdmin());
+      allow list: if false;
+      allow create, update: if false;
+      allow delete: if isAdmin() || (signedIn() && request.auth.uid == userId);
+    }
+
+    match /shops/{shopId} {
+      allow get: if isAdmin() || storeOwnsShop(shopId);
+      allow list: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // Archivi turni/ferie per negozio e anno (stesso payload del JSON locale).
+    match /archives/{shopId}/years/{year} {
+      allow read: if isAdmin() || storeOwnsShop(shopId);
+      // Se il documento dichiara shopId, deve coincidere col path (anti-tamper).
+      allow create, update: if (isAdmin() || storeOwnsShop(shopId)) &&
+        (!('shopId' in request.resource.data) || request.resource.data.shopId == shopId) &&
+        (!('year' in request.resource.data) || request.resource.data.year == int(year));
+      allow delete: if isAdmin() || storeOwnsShop(shopId);
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

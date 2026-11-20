@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pianificatore Turni</title>
+<link rel="icon" href="./favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --brand:#0176D3; --brand-dark:#032D60; --brand-hover:#014486;
+  --ink:#181818; --muted:#706E6B; --bg:#F3F2F2; --panel:#fff;
+  --line:#E5E5E5; --line-strong:#C9C7C5; --ok-bg:#EBF7E6; --ok-line:#91DB8B; --neg:#BA0517;
+  --shadow:0 2px 4px rgba(0,0,0,.07), 0 0 1px rgba(0,0,0,.12); --radius:4px;
+  font-family:"Source Sans 3","Segoe UI",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;color:var(--ink);background:var(--bg);min-height:100vh}
+.hidden{display:none!important}
+.global-header{background:var(--brand-dark);color:#fff;position:sticky;top:0;z-index:30}
+.global-header .wrap{max-width:1280px;margin:0 auto;padding:0 16px;min-height:48px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.brand-lockup{display:flex;align-items:center;gap:10px}
+.brand-mark{width:28px;height:28px;border-radius:6px;background:var(--brand);display:grid;place-items:center}
+.brand-mark svg{width:18px;height:18px}
+.brand-text strong{display:block;font-size:1rem;font-weight:700;line-height:1.15}
+.brand-text span{display:block;font-size:.75rem;opacity:.78;font-weight:500}
+.header-actions{display:flex;gap:8px}
+.header-actions button{appearance:none;border:1px solid rgba(255,255,255,.28);background:transparent;color:#fff;border-radius:var(--radius);padding:6px 12px;font:inherit;font-size:.875rem;font-weight:600;cursor:pointer}
+.header-actions button:hover{background:rgba(255,255,255,.08)}
+main{max-width:1100px;margin:0 auto;padding:24px 16px 48px}
+main.planner-open{max-width:none;padding:8px}
+main.planner-open #storeChrome{display:none}
+body.auth-screen .global-header{display:none}
+body.auth-screen main{max-width:none;margin:0;padding:0;min-height:100vh}
+#plannerBar{display:none;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px;padding:8px 12px;background:#fff;border:1px solid var(--line);border-radius:var(--radius)}
+main.planner-open #plannerBar{display:flex}
+#plannerBar .year-wrap{display:inline-flex;align-items:center;gap:8px;font-weight:650;margin:0;font-size:.875rem}
+#plannerBar select{width:auto;margin:0;padding:7px 10px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px}
+.panel h2{margin:0 0 6px;font-size:1.125rem;font-weight:700;color:var(--brand-dark)}
+.hint{color:var(--muted);font-size:.875rem;line-height:1.45;margin:0 0 14px}
+label{display:block;font-size:.75rem;font-weight:700;color:var(--muted);margin:0 0 14px;text-transform:uppercase;letter-spacing:.04em}
+input,select{width:100%;margin-top:6px;border:1px solid var(--line-strong);border-radius:var(--radius);padding:10px 12px;font:inherit;font-size:.9375rem;font-weight:500;color:var(--ink);background:#fff;text-transform:none;letter-spacing:0}
+input:focus,select:focus{outline:2px solid var(--brand);border-color:var(--brand)}
+button{appearance:none;border:1px solid var(--line-strong);background:#fff;color:var(--ink);border-radius:var(--radius);padding:8px 14px;font:inherit;font-size:.875rem;font-weight:650;cursor:pointer}
+button.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+button.primary:hover{background:var(--brand-hover);border-color:var(--brand-hover);color:#fff}
+button:hover{background:#f3f3f3}
+button:disabled{opacity:.45;cursor:not-allowed}
+.actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:14px}
+.msg{min-height:1.3em;font-size:.875rem;color:var(--muted);margin-top:10px}
+.msg.err{color:var(--neg);font-weight:600}
+.creds{background:var(--ok-bg);border:1px solid var(--ok-line);border-radius:var(--radius);padding:12px;margin-top:12px;font-size:.9rem}
+.creds code{font-weight:700}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+th,td{border-bottom:1px solid var(--line);padding:10px 8px;text-align:left}
+th{color:var(--muted);font-size:.7rem;text-transform:uppercase;letter-spacing:.04em;font-weight:700}
+/* Login split — enterprise */
+.login-shell{
+  min-height:100vh;display:grid;grid-template-columns:minmax(280px,42%) 1fr;background:#fff;
+}
+.login-brand{
+  position:relative;overflow:hidden;color:#fff;padding:48px 40px;
+  background:
+    radial-gradient(900px 480px at -10% -20%, rgba(1,118,211,.55), transparent 55%),
+    radial-gradient(700px 420px at 110% 110%, rgba(1,118,211,.35), transparent 50%),
+    linear-gradient(165deg, #021F46 0%, #032D60 42%, #014486 100%);
+  display:flex;flex-direction:column;justify-content:space-between;gap:32px;
+}
+.login-brand::after{
+  content:"";position:absolute;inset:auto -20% -30% 20%;height:70%;
+  background:repeating-linear-gradient(-18deg, transparent 0 14px, rgba(255,255,255,.04) 14px 15px);
+  pointer-events:none;
+}
+.login-brand-top{position:relative;z-index:1;display:flex;align-items:center;gap:12px}
+.login-brand-top .brand-mark{width:36px;height:36px;border-radius:8px}
+.login-brand-top .brand-mark svg{width:22px;height:22px}
+.login-brand-top strong{font-size:1.05rem;font-weight:700}
+.login-brand-copy{position:relative;z-index:1;max-width:360px}
+.login-brand-copy h1{margin:0 0 12px;font-size:clamp(1.6rem,2.4vw,2.1rem);line-height:1.2;font-weight:700;letter-spacing:-.02em}
+.login-brand-copy p{margin:0;font-size:1rem;line-height:1.55;color:rgba(255,255,255,.82)}
+.login-brand-foot{position:relative;z-index:1;font-size:.8rem;color:rgba(255,255,255,.55)}
+.login-form-pane{
+  display:flex;align-items:center;justify-content:center;padding:40px 24px;background:#F3F2F2;
+}
+.login-card{
+  width:min(400px,100%);background:#fff;border:1px solid var(--line);border-radius:8px;
+  box-shadow:var(--shadow);padding:32px 28px 28px;
+}
+.login-card .app-title{margin:0 0 6px;font-size:1.35rem;font-weight:700;color:var(--brand-dark);letter-spacing:-.02em}
+.login-card .app-sub{margin:0 0 22px;color:var(--muted);font-size:.92rem;line-height:1.4}
+.login-card h2{display:none}
+.login-card .actions{margin-top:18px}
+.login-card .actions .primary{width:100%;padding:11px 14px;font-size:.95rem}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:860px){
+  .login-shell{grid-template-columns:1fr}
+  .login-brand{min-height:220px;padding:28px 24px}
+  .login-brand-copy h1{font-size:1.45rem}
+}
+@media(max-width:700px){.row{grid-template-columns:1fr}}
+iframe#plannerFrame{width:100%;min-height:80vh;border:1px solid var(--line);border-radius:var(--radius);background:#fff}
+main.planner-open iframe#plannerFrame{min-height:calc(100vh - 120px);height:calc(100vh - 120px)}
+</style>
+</head>
+<body>
+<header class="global-header">
+  <div class="wrap">
+    <div class="brand-lockup">
+      <div class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="15" rx="2" fill="#fff"/><rect x="3" y="5" width="18" height="4" fill="#0176D3"/><rect x="6" y="12" width="4" height="3" fill="#0176D3"/><rect x="11" y="12" width="4" height="3" fill="#C9C7C5"/><rect x="16" y="12" width="3" height="3" fill="#C9C7C5"/></svg>
+      </div>
+      <div class="brand-text">
+        <strong>Pianificatore Turni</strong>
+        <span id="headerSub">Accesso negozio</span>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button type="button" id="btnChangePw" class="hidden">Cambia password</button>
+      <button type="button" id="btnLogout" class="hidden">Esci</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section id="setupView" class="login-shell hidden">
+    <aside class="login-brand">
+      <div class="login-brand-top">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="15" rx="2" fill="#fff"/><rect x="3" y="5" width="18" height="4" fill="#0176D3"/><rect x="6" y="12" width="4" height="3" fill="#0176D3"/><rect x="11" y="12" width="4" height="3" fill="#C9C7C5"/><rect x="16" y="12" width="3" height="3" fill="#C9C7C5"/></svg>
+        </div>
+        <strong>Pianificatore Turni</strong>
+      </div>
+      <div class="login-brand-copy">
+        <h1>Configurazione richiesta</h1>
+        <p>Collega il progetto Firebase per abilitare login e archivi negozio.</p>
+      </div>
+      <div class="login-brand-foot">Setup una tantum</div>
+    </aside>
+    <div class="login-form-pane">
+      <div class="login-card">
+        <p class="app-title">Configura Firebase</p>
+        <p class="hint">Crea un progetto Firebase, abilita Authentication (Email/Password) e Firestore, poi copia le chiavi in <code>js/firebase-config.js</code>.</p>
+        <p class="hint">Poi pubblica le regole: <code>firebase deploy --only firestore:rules</code>.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="loginView" class="login-shell">
+    <aside class="login-brand">
+      <div class="login-brand-top">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="15" rx="2" fill="#fff"/><rect x="3" y="5" width="18" height="4" fill="#0176D3"/><rect x="6" y="12" width="4" height="3" fill="#0176D3"/><rect x="11" y="12" width="4" height="3" fill="#C9C7C5"/><rect x="16" y="12" width="3" height="3" fill="#C9C7C5"/></svg>
+        </div>
+        <strong>Pianificatore Turni</strong>
+      </div>
+      <div class="login-brand-copy">
+        <h1>Turni, ferie e PAR del punto vendita</h1>
+        <p>Pianifica la settimana, tieni i residui aggiornati e esporta quando serve.</p>
+      </div>
+      <div class="login-brand-foot">Uso riservato agli store</div>
+    </aside>
+    <div class="login-form-pane">
+      <div class="login-card">
+        <p class="app-title">Accedi</p>
+        <p class="app-sub">Inserisci le credenziali del tuo punto vendita</p>
+        <h2>Accesso</h2>
+        <label>Username<input id="loginUser" autocomplete="username" placeholder="es. store.mb020"></label>
+        <label>Password<input id="loginPass" type="password" autocomplete="current-password"></label>
+        <div class="actions">
+          <button type="button" class="primary" id="btnLogin">Entra</button>
+        </div>
+        <div class="msg" id="loginMsg"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="adminView" class="hidden">
+    <div class="panel" style="margin-bottom:14px">
+      <h2>Amministrazione negozi</h2>
+      <p class="hint">Crea un negozio → nasce l’account <code>store.&lt;id&gt;</code> con password temporanea. Al primo accesso lo store la cambia. Puoi anche resettarla da qui.</p>
+      <div class="row">
+        <label>ID negozio<input id="newShopId" placeholder="mb020" pattern="[a-z0-9-]{2,40}"></label>
+        <label>Nome<input id="newShopName" placeholder="Modena"></label>
+      </div>
+      <div class="actions">
+        <button type="button" class="primary" id="btnCreateShop">Crea negozio + account</button>
+        <button type="button" id="btnRefreshShops">Aggiorna elenco</button>
+      </div>
+      <div class="msg" id="adminMsg"></div>
+      <div id="newCreds" class="creds hidden"></div>
+    </div>
+    <div class="panel">
+      <h2>Account negozio</h2>
+      <div style="overflow-x:auto">
+        <table>
+          <thead><tr><th>Negozio</th><th>Username</th><th>Stato</th><th></th></tr></thead>
+          <tbody id="shopsBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section id="storeView" class="hidden">
+    <div class="panel" id="storeChrome" style="margin-bottom:12px">
+      <h2 id="storeTitle">Negozio</h2>
+      <div class="actions">
+        <label style="margin:0;font-weight:650;color:var(--ink)">Anno
+          <select id="yearSelect" style="width:auto;display:inline-block;margin-left:6px"></select>
+        </label>
+        <button type="button" class="primary" id="btnOpenPlanner">Apri pianificatore</button>
+        <a href="./manuale/" style="appearance:none;border:1px solid var(--line-strong);background:#fff;color:var(--ink);border-radius:var(--radius);padding:8px 14px;font:inherit;font-size:.875rem;font-weight:650;text-decoration:none">Manuale</a>
+      </div>
+      <div class="msg" id="storeMsg"></div>
+    </div>
+    <div id="plannerBar">
+      <label class="year-wrap">Anno
+        <select id="yearSelectBar"></select>
+      </label>
+      <div class="actions" style="margin:0">
+        <button type="button" class="primary" id="btnReloadYear">Apri anno</button>
+        <button type="button" id="btnClosePlanner">Chiudi pianificatore</button>
+      </div>
+    </div>
+    <iframe id="plannerFrame" class="hidden" title="Pianificatore" allow="downloads"></iframe>
+  </section>
+</main>
+
+<script src="./js/firebase-config.js?v=26"></script>
+<script src="./js/auth.js?v=26"></script>
+<script type="module" src="./js/firebase-init.js?v=26"></script>
+<script>
+let currentProfile = null;
+let loginInProgress = false;
+
+function $(id){ return document.getElementById(id); }
+function show(id){ $(id).classList.remove("hidden"); }
+function hide(id){ $(id).classList.add("hidden"); }
+function setMsg(el, text, isErr){
+  el.textContent = text || "";
+  el.classList.toggle("err", !!isErr);
+}
+
+function waitFirebase(){
+  return new Promise((resolve)=>{
+    if(window.firebaseReady || window.firebaseConfigMissing) return resolve();
+    window.addEventListener("firebase-ready", ()=>resolve(), { once:true });
+  });
+}
+
+function setAuthScreen(on){
+  document.body.classList.toggle("auth-screen", !!on);
+}
+
+async function afterAuth(profile){
+  currentProfile = profile;
+  hide("loginView");
+  setAuthScreen(false);
+  show("btnLogout");
+  show("btnChangePw");
+  $("headerSub").textContent = profile.role === "admin"
+    ? "Amministratore"
+    : `Negozio · ${profile.shopName || profile.shopId}`;
+  if(profile.role === "admin"){
+    hide("storeView");
+    show("adminView");
+    await refreshShops();
+  }else{
+    hide("adminView");
+    show("storeView");
+    $("storeTitle").textContent = profile.shopName || profile.shopId || "Negozio";
+    fillYears();
+  }
+}
+
+function fillYears(){
+  const y = new Date().getFullYear();
+  const current = $("yearSelect")?.value || String(y);
+  ["yearSelect", "yearSelectBar"].forEach((id)=>{
+    const sel = $(id);
+    if(!sel) return;
+    sel.innerHTML = "";
+    for(let i = y - 1; i <= y + 2; i++){
+      const o = document.createElement("option");
+      o.value = String(i);
+      o.textContent = String(i);
+      if(String(i) === String(current) || (!current && i === y)) o.selected = true;
+      sel.appendChild(o);
+    }
+  });
+}
+
+function syncYearSelects(fromId){
+  const v = $(fromId)?.value;
+  if(!v) return;
+  ["yearSelect", "yearSelectBar"].forEach((id)=>{
+    if(id === fromId) return;
+    const sel = $(id);
+    if(sel) sel.value = v;
+  });
+}
+
+function closePlanner(){
+  $("plannerFrame").classList.add("hidden");
+  $("plannerFrame").src = "about:blank";
+  document.querySelector("main")?.classList.remove("planner-open");
+  setMsg($("storeMsg"), "");
+}
+
+async function refreshShops(){
+  const api = window.firebaseApi;
+  const body = $("shopsBody");
+  body.innerHTML = "<tr><td colspan='4'>Caricamento…</td></tr>";
+  const usersSnap = await api.getDocs(api.collection(api.db, "users"));
+  const rows = [];
+  usersSnap.forEach((d)=>{
+    const u = { uid:d.id, ...d.data() };
+    if(u.role === "store") rows.push(u);
+  });
+  rows.sort((a,b)=>String(a.shopId||"").localeCompare(String(b.shopId||"")));
+  if(!rows.length){
+    body.innerHTML = "<tr><td colspan='4'>Nessun negozio. Creane uno sopra.</td></tr>";
+    return;
+  }
+  body.innerHTML = rows.map((u)=>`
+    <tr>
+      <td>${esc(u.shopName||"")} <span style="color:var(--muted)">(${esc(u.shopId||"")})</span></td>
+      <td><code>${esc(u.username||"")}</code></td>
+      <td>${u.active===false?"disattivo":(u.mustChangePassword?"password temporanea":"attivo")}</td>
+      <td><button type="button" data-reset="${esc(u.uid)}" data-user="${esc(u.username||"")}">Reset password</button></td>
+    </tr>`).join("");
+  body.querySelectorAll("button[data-reset]").forEach((btn)=>{
+    btn.addEventListener("click", ()=>resetStorePassword(btn.dataset.reset, btn.dataset.user));
+  });
+}
+
+function esc(s){
+  return String(s||"").replace(/[&<>"']/g, (c)=>({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;" }[c]));
+}
+
+async function createShop(){
+  const msg = $("adminMsg");
+  const creds = $("newCreds");
+  creds.classList.add("hidden");
+  const shopId = $("newShopId").value.trim().toLowerCase();
+  const shopName = $("newShopName").value.trim();
+  if(!/^[a-z0-9-]{2,40}$/.test(shopId)){
+    setMsg(msg, "ID negozio: 2–40 caratteri, solo a-z 0-9 -", true); return;
+  }
+  if(!shopName){ setMsg(msg, "Inserisci il nome del negozio.", true); return; }
+  const username = "store." + shopId;
+  let password;
+  try{ password = TurniAuth.generateInitialAccountPassword(); }
+  catch(e){ setMsg(msg, e.message, true); return; }
+  const btn = $("btnCreateShop");
+  btn.disabled = true;
+  setMsg(msg, "Creazione in corso…");
+  const api = window.firebaseApi;
+  let shopCreated = false;
+  try{
+    const ref = api.doc(api.db, "shops", shopId);
+    if((await api.getDoc(ref)).exists()) throw new Error("Esiste già un negozio con questo ID.");
+    await api.setDoc(ref, {
+      name: shopName,
+      active: true,
+      createdAt: api.serverTimestamp(),
+      updatedAt: api.serverTimestamp(),
+    });
+    shopCreated = true;
+    await TurniAuth.createStaffAccount({
+      username, role:"store", shopId, shopName, password
+    });
+    $("newShopId").value = "";
+    $("newShopName").value = "";
+    creds.innerHTML = `<strong>Negozio creato.</strong><br>
+      Negozio: ${esc(shopName)} (<code>${esc(shopId)}</code>)<br>
+      Username: <code>${esc(username)}</code><br>
+      Password iniziale: <code>${esc(password)}</code>
+      <p class="hint" style="margin:8px 0 0">Consegnala in modo riservato. Al primo accesso lo store dovrà impostare una nuova password.</p>`;
+    creds.classList.remove("hidden");
+    setMsg(msg, "Creato correttamente.");
+    await refreshShops();
+  }catch(e){
+    if(shopCreated){
+      try{ await api.deleteDoc(api.doc(api.db, "shops", shopId)); }catch(_){}
+    }
+    setMsg(msg, "Creazione non riuscita: " + (e.message||e), true);
+  }finally{
+    btn.disabled = false;
+  }
+}
+
+async function resetStorePassword(uid, username){
+  if(!confirm("Generare una nuova password temporanea per "+username+"?")) return;
+  const msg = $("adminMsg");
+  const creds = $("newCreds");
+  try{
+    const password = TurniAuth.generateInitialAccountPassword();
+    const result = await TurniAuth.rotateStaffPassword({ uid, username, humanPassword: password, mustChangePassword: true });
+    if(result && result.mode === "console-required"){
+      creds.innerHTML = `<strong>Reset: azione Console richiesta.</strong><br>
+        Email Auth: <code>${esc(result.email)}</code><br>
+        Password temporanea da impostare in Firebase Console → Authentication → Users:<br>
+        <code>${esc(result.temporaryPassword)}</code>
+        <p class="hint" style="margin:8px 0 0">Dopo averla impostata in Console, consegnala allo store. Al primo accesso dovrà cambiarla.</p>`;
+      setMsg(msg, "Flag mustChangePassword aggiornato. Completa l’impostazione password in Console.");
+    }else{
+      creds.innerHTML = `<strong>Password resettata.</strong><br>
+        Username: <code>${esc(username)}</code><br>
+        Password temporanea: <code>${esc(password)}</code>`;
+      setMsg(msg, "Password aggiornata (account legacy migrato ad Auth diretta).");
+    }
+    creds.classList.remove("hidden");
+    await refreshShops();
+  }catch(e){
+    setMsg(msg, "Reset non riuscito: "+e.message, true);
+  }
+}
+
+async function doLogin(){
+  const msg = $("loginMsg");
+  const user = $("loginUser").value.trim();
+  const pass = $("loginPass").value;
+  if(!user||!pass){ setMsg(msg, "Inserisci username e password.", true); return; }
+  $("btnLogin").disabled = true;
+  loginInProgress = true;
+  setMsg(msg, "Accesso in corso…");
+  try{
+    const { user: authUser, profile, firebasePassword, forcePasswordChange } =
+      await TurniAuth.loginWithUsernamePassword(user, pass);
+    if(forcePasswordChange){
+      let next = prompt("Primo accesso: imposta una nuova password (min. 10 caratteri).");
+      if(next === null) throw new Error("Devi cambiare la password per accedere.");
+      TurniAuth.assertStaffPassword(next);
+      const conf = prompt("Conferma la nuova password.");
+      if(conf !== next) throw new Error("Le password non coincidono.");
+      await TurniAuth.replaceOwnStaffPassword(authUser, profile.username, next, firebasePassword);
+      profile.mustChangePassword = false;
+    }
+    $("loginPass").value = "";
+    await afterAuth(profile);
+    setMsg(msg, "");
+  }catch(e){
+    const code = e?.code || "";
+    const plain = (code === "auth/invalid-credential" || code === "auth/wrong-password" || code === "auth/user-not-found")
+      ? "Username o password non corretti."
+      : (e.message || String(e));
+    setMsg(msg, plain, true);
+    try{ await window.firebaseApi?.signOut(window.firebaseApi.auth); }catch(_){}
+  }finally{
+    loginInProgress = false;
+    $("btnLogin").disabled = false;
+  }
+}
+
+async function changeOwnPassword(){
+  if(!currentProfile) return;
+  const api = window.firebaseApi;
+  const current = prompt("Password attuale:");
+  if(current === null) return;
+  const next = prompt("Nuova password (min. 10 caratteri):");
+  if(next === null) return;
+  try{
+    TurniAuth.assertStaffPassword(next);
+    const conf = prompt("Conferma nuova password:");
+    if(conf !== next) throw new Error("Le password non coincidono.");
+    // re-auth con password umana (Auth diretta), poi updatePassword
+    const { user, firebasePassword } = await TurniAuth.loginWithUsernamePassword(currentProfile.username, current);
+    await TurniAuth.replaceOwnStaffPassword(user, currentProfile.username, next, firebasePassword);
+    alert("Password aggiornata.");
+  }catch(e){
+    alert("Cambio password non riuscito: "+e.message);
+  }
+}
+
+function openPlanner(fromBar){
+  if(!currentProfile || currentProfile.role !== "store") return;
+  if(fromBar) syncYearSelects("yearSelectBar");
+  else syncYearSelects("yearSelect");
+  const year = $("yearSelect").value || $("yearSelectBar").value;
+  syncYearSelects("yearSelect");
+  const frame = $("plannerFrame");
+  const params = new URLSearchParams({
+    cloud: "1",
+    shopId: currentProfile.shopId || "",
+    shopName: currentProfile.shopName || "",
+    year: year,
+    v: "25",
+  });
+  frame.src = "./planner/index.html?" + params.toString();
+  frame.classList.remove("hidden");
+  document.querySelector("main")?.classList.add("planner-open");
+  setMsg($("storeMsg"), "Pianificatore aperto per "+(currentProfile.shopName||currentProfile.shopId)+" · "+year);
+}
+
+async function boot(){
+  await waitFirebase();
+  if(window.firebaseConfigMissing){
+    hide("loginView");
+    show("setupView");
+    setAuthScreen(true);
+    return;
+  }
+  setAuthScreen(true);
+  $("btnLogin").addEventListener("click", doLogin);
+  $("loginPass").addEventListener("keydown", (e)=>{ if(e.key==="Enter") doLogin(); });
+  $("btnCreateShop").addEventListener("click", createShop);
+  $("btnRefreshShops").addEventListener("click", refreshShops);
+  $("btnOpenPlanner").addEventListener("click", ()=>openPlanner(false));
+  $("btnReloadYear").addEventListener("click", ()=>openPlanner(true));
+  $("btnClosePlanner").addEventListener("click", closePlanner);
+  $("yearSelect").addEventListener("change", ()=>syncYearSelects("yearSelect"));
+  $("yearSelectBar").addEventListener("change", ()=>{
+    syncYearSelects("yearSelectBar");
+    if(document.querySelector("main")?.classList.contains("planner-open")) openPlanner(true);
+  });
+  $("btnChangePw").addEventListener("click", changeOwnPassword);
+  $("btnLogout").addEventListener("click", async ()=>{
+    try{ await window.firebaseApi.signOut(window.firebaseApi.auth); }catch(_){}
+    currentProfile = null;
+    hide("adminView"); hide("storeView"); hide("btnLogout"); hide("btnChangePw");
+    closePlanner();
+    $("headerSub").textContent = "Accesso negozio";
+    setAuthScreen(true);
+    show("loginView");
+  });
+
+  window.firebaseApi.onAuthStateChanged(window.firebaseApi.auth, async (user)=>{
+    if(!user){
+      currentProfile = null;
+      return;
+    }
+    // Durante doLogin (cambio password obbligatorio) non interferire.
+    if(loginInProgress || currentProfile) return;
+    try{
+      const snap = await window.firebaseApi.getDoc(window.firebaseApi.doc(window.firebaseApi.db, "users", user.uid));
+      if(!snap.exists()) return;
+      const profile = { ...snap.data(), uid: user.uid };
+      if(profile.active !== true) return;
+      // Prima password: lascia stare la sessione — doLogin gestisce il prompt.
+      // Non fare signOut (rompeva Auth a metà login → "permission denied").
+      if(profile.mustChangePassword === true) return;
+      if(["admin","store"].includes(profile.role)) await afterAuth(profile);
+    }catch(_){}
+  });
+}
+
+boot();
+</script>
+</body>
+</html>
