@@ -54,7 +54,7 @@ table.turni th:first-child,table.turni td:first-child{border-left:0}
 table.turni th:last-child,table.turni td:last-child{border-right:0}
 table.turni tr:last-child td{border-bottom:0}
 table.turni th.wd,table.turni tr.wd th{background:var(--head-wd);color:var(--head-ink);font-weight:700;font-size:.72rem;padding:7px 4px}
-table.turni tr.days th{background:var(--head-day);color:var(--head-ink);font-weight:700;font-size:.82rem;padding:6px 4px}
+table.turni tr.days th{background:var(--head-day);color:var(--head-ink);font-weight:700;font-size:.78rem;padding:6px 3px;white-space:nowrap;letter-spacing:.01em}
 table.turni tr.wd th.sun,table.turni tr.days th.sun{background:#d8dde4}
 table.turni th.label,table.turni td.label{text-align:left;min-width:190px;max-width:230px;background:#f7f8fa;font-weight:650;font-size:.7rem;padding-left:8px;position:sticky;left:0;z-index:2;box-shadow:1px 0 0 var(--grid-line)}
 table.turni th.storeh,table.turni td.store{min-width:90px;background:#f7f8fa;font-weight:650;font-size:.72rem;position:sticky;left:190px;z-index:2;box-shadow:1px 0 0 var(--grid-line)}
@@ -1597,7 +1597,11 @@ function renderTurni(){
     html+=`<div class="week-block"><table class="turni">`;
     html+=`<tr class="wd"><th class="label"></th><th class="storeh"></th>${week.map((d,i)=>`<th class="${d.getDay()===0?"sun":""}">${WEEKDAYS[i]}</th>`).join("")}<th class="ot">TOT ORE STRAO</th></tr>`;
     html+=`<tr class="days"><th class="label">RISORSA</th><th class="storeh">STORE</th>`;
-    week.forEach(d=>{ const inMonth=d.getMonth()+1===currentMonth; html+=`<th class="${[inMonth?"":"out", d.getDay()===0?"sun":""].filter(Boolean).join(" ")}">${d.getDate()}</th>`; });
+    week.forEach(d=>{
+      const inMonth=d.getMonth()+1===currentMonth;
+      const dayLabel=`${d.getDate()} ${MONTHS[d.getMonth()].slice(0,3).toLowerCase()}`;
+      html+=`<th class="${[inMonth?"":"out", d.getDay()===0?"sun":""].filter(Boolean).join(" ")}">${dayLabel}</th>`;
+    });
     html+=`<th class="ot"></th></tr>`;
     peopleForMonth(getYear(), currentMonth).forEach((person)=>{
       const ot=weekOvertime(person, week);
