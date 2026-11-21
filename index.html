@@ -3,6 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
 <title>Pianificatore Turni</title>
 <link rel="icon" href="./favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -487,7 +489,8 @@ function openPlanner(fromBar){
     shopId: currentProfile.shopId || "",
     shopName: currentProfile.shopName || "",
     year: year,
-    v: "25",
+    v: "28",
+    _: String(Date.now()),
   });
   frame.src = "./planner/index.html?" + params.toString();
   frame.classList.remove("hidden");
