@@ -545,6 +545,13 @@ function entryWorkHours(e){
   if(e.work) return hoursFromRange(e.work);
   return 0;
 }
+/** Ore da mettere nel file Excel "ore lavorate": FUORI SEDE non conta. */
+function entryHoursForWorkedExport(e){
+  e=normalizeEntry(e);
+  if(e.kind===FUORI_SEDE || (e.kind && LEGACY_CITIES.includes(e.kind))) return 0;
+  if(e.work) return hoursFromRange(e.work);
+  return 0;
+}
 function entryParHours(e){ e=normalizeEntry(e); return e.par||0; }
 function entryAllattHours(e){ e=normalizeEntry(e); return e.allatt||0; }
 function entryOccupiedHours(e){ return entryWorkHours(e)+entryParHours(e)+entryAllattHours(e); }
@@ -1994,7 +2001,7 @@ async function buildHoursByDayWorkbook(month=currentMonth){
       if(!personActiveOn(p, ds)){
         cell.value="";
       }else{
-        const h=entryWorkHours(getEntry(p.id, ds));
+        const h=entryHoursForWorkedExport(getEntry(p.id, ds));
         cell.value=h>0 ? round3(h) : 0;
       }
       cell.font={name:"Calibri", size:10};
