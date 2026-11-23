@@ -1445,7 +1445,6 @@ function openMenu(personId, ds, x, y){
   const room=round3(DAY_CAP-used);
   const hasContent=!(!e.work && !e.par && !e.allatt && !e.kind && !e.note);
   menu.innerHTML=`
-    ${hasContent?`<button type="button" class="danger danger-fill" data-act="clear">🗑 Svuota cella</button><div class="sep"></div>`:""}
     <button type="button" data-act="work">⏱ Ore lavorate…</button>
     <button type="button" data-act="par" ${room<=0?"disabled":""}>➕ PAR… ${room>0?`(max ${fmt(room)}h)`: "(giorno pieno)"}</button>
     <button type="button" data-act="allatt" ${room<=0?"disabled":""}>Allattamento… ${room>0?`(max ${fmt(room)}h)`: "(giorno pieno)"}</button>
@@ -1455,7 +1454,7 @@ function openMenu(personId, ds, x, y){
     <button type="button" data-act="kind" data-kind="${FUORI_SEDE}">FUORI SEDE</button>
     <div class="sep"></div>
     <button type="button" data-act="note">${e.note?"✏️ Nota…":"Nota…"}</button>
-    ${hasContent?`<div class="sep"></div><button type="button" class="danger" data-act="clear">Svuota cella</button>`:""}
+    ${hasContent?`<div class="sep"></div><button type="button" class="danger" data-act="clear">🗑 Svuota cella</button>`:""}
   `;
   menu.classList.add("open");
   const pad=8;
