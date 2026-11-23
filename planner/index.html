@@ -101,12 +101,13 @@ button.fittizi-sw.no{background:#f4f6f8;border-color:#c9c7c5;color:#3e3e3c}
 button.fittizi-sw .fittizi-a{margin-left:4px;font-size:.65rem;opacity:.75;font-weight:700}
 .fittizi-liberi{font-size:.78rem;color:var(--muted);font-variant-numeric:tabular-nums}
 /* popover menu */
-#cellMenu{position:fixed;z-index:100;min-width:220px;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 16px 40px rgba(0,0,0,.16);padding:6px;display:none}
+#cellMenu{position:fixed;z-index:100;min-width:220px;max-width:min(320px,calc(100vw - 16px));max-height:min(70vh,520px);overflow-y:auto;-webkit-overflow-scrolling:touch;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 16px 40px rgba(0,0,0,.16);padding:6px;display:none}
 #cellMenu.open{display:block}
 #cellMenu button{display:block;width:100%;text-align:left;border:0;background:transparent;border-radius:8px;padding:9px 10px;font-weight:600}
 #cellMenu button:hover{background:var(--accent-soft)}
 #cellMenu .sep{height:1px;background:var(--line);margin:4px 0}
 #cellMenu .danger{color:var(--neg)}
+#cellMenu button.danger-fill{background:#F9E6E6;color:var(--neg);font-weight:750;margin-bottom:2px}
 table.turni td.cell .cell-note{
   display:block;margin-top:3px;padding:0;border:0;border-radius:0;
   font-size:.66rem;font-weight:500;font-style:normal;letter-spacing:0;
@@ -182,7 +183,7 @@ body.cloud-embed #btnHoursExport{right:10px;bottom:10px}
 
   <section class="panel hidden" id="view-ferie">
     <h2>Calcolo ferie e PAR — mese per mese</h2>
-    <p class="hint">Liberi fittizi = SI finché il mese non è tutto compilato per la risorsa (solo FERIE/PAR non bastano). NO automatico a mese completo. Puoi forzare SI/NO; la A indica automatico.</p>
+    <p class="hint">Liberi fittizi = SI finché ogni giorno in forza del mese ha un turno/assenza (nota sola non basta). A mese completo diventano NO in automatico. Puoi forzare SI/NO; la A indica automatico.</p>
     <div id="ferieMonths"></div>
     <h2 style="margin-top:8px">Riepilogo annuale</h2>
     <div style="overflow-x:auto"><table class="summary" id="ferieYearTable"></table></div>
@@ -1050,6 +1051,10 @@ function setEntry(personId, ds, entry){
   }
   if(isEmptyEntry(e)) delete state.turni[personId][ds];
   else state.turni[personId][ds]=e;
+  // Aggiorna liberi fittizi del mese (SI→auto NO a mese completo)
+  if(ds && /^\d{4}-\d{2}-\d{2}$/.test(ds)){
+    reconcileLiberiFittizi(personId, Number(ds.slice(5,7)));
+  }
 }
 
 function weekOvertime(person, weekDates){
@@ -1076,6 +1081,16 @@ function weekDayOvertimeList(person, weekDates){
 
 function ratio(person){ return (Number(person.hoursWeek)||0)/40; }
 
+/** Giorno compilato ai fini dei liberi fittizi (nota sola non basta). */
+function entryCountsAsCompiled(e){
+  e=normalizeEntry(e);
+  if(e.work) return true;
+  if(e.kind) return true;
+  if(e.par!=null && Number(e.par)>0) return true;
+  if(e.allatt!=null && Number(e.allatt)>0) return true;
+  return false;
+}
+
 /**
  * Mese interamente compilato per la risorsa: ogni giorno in forza ha un turno/assenza
  * (ore, RIPOSO, FERIE, PAR, …). Note sole non contano.
@@ -1090,8 +1105,7 @@ function isMonthFullyCompiled(personId, month){
     const ds=`${year}-${pad(month)}-${pad(d)}`;
     if(person && !personActiveOn(person, ds)) continue;
     active++;
-    const e=normalizeEntry(getEntry(personId, ds));
-    if(!(e.work || e.par || e.allatt || e.kind)) return false;
+    if(!entryCountsAsCompiled(getEntry(personId, ds))) return false;
   }
   return active>0;
 }
@@ -1147,7 +1161,19 @@ function setLiberiFittiziOverride(personId, month, value){
 function autoLiberiFittizi(personId, month){
   return !isMonthFullyCompiled(personId, month);
 }
+/**
+ * Se il mese è completo, un eventuale force SI rimasto da prima è obsoleto:
+ * si torna in automatico (NO). Così i liberi fittizi si disattivano da soli.
+ */
+function reconcileLiberiFittizi(personId, month){
+  if(!personId || !month) return;
+  if(!isMonthFullyCompiled(personId, month)) return;
+  if(getLiberiFittiziOverride(personId, month)==="si"){
+    setLiberiFittiziOverride(personId, month, null);
+  }
+}
 function effectiveLiberiFittizi(personId, month){
+  reconcileLiberiFittizi(personId, month);
   const ov=getLiberiFittiziOverride(personId, month);
   if(ov==="si") return { use:true, mode:"manuale", override:"si" };
   if(ov==="no") return { use:false, mode:"manuale", override:"no" };
@@ -1417,7 +1443,9 @@ function openMenu(personId, ds, x, y){
   const e=getEntry(personId, ds);
   const used=entryOccupiedHours(e);
   const room=round3(DAY_CAP-used);
+  const hasContent=!(!e.work && !e.par && !e.allatt && !e.kind && !e.note);
   menu.innerHTML=`
+    ${hasContent?`<button type="button" class="danger danger-fill" data-act="clear">🗑 Svuota cella</button><div class="sep"></div>`:""}
     <button type="button" data-act="work">⏱ Ore lavorate…</button>
     <button type="button" data-act="par" ${room<=0?"disabled":""}>➕ PAR… ${room>0?`(max ${fmt(room)}h)`: "(giorno pieno)"}</button>
     <button type="button" data-act="allatt" ${room<=0?"disabled":""}>Allattamento… ${room>0?`(max ${fmt(room)}h)`: "(giorno pieno)"}</button>
@@ -1427,8 +1455,7 @@ function openMenu(personId, ds, x, y){
     <button type="button" data-act="kind" data-kind="${FUORI_SEDE}">FUORI SEDE</button>
     <div class="sep"></div>
     <button type="button" data-act="note">${e.note?"✏️ Nota…":"Nota…"}</button>
-    <div class="sep"></div>
-    <button type="button" class="danger" data-act="clear">Cancella</button>
+    ${hasContent?`<div class="sep"></div><button type="button" class="danger" data-act="clear">Svuota cella</button>`:""}
   `;
   menu.classList.add("open");
   const pad=8;
