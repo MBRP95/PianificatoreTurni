@@ -1229,8 +1229,10 @@ function autoLiberiFittizi(personId, month){
   return !isMonthFullyCompiled(personId, month);
 }
 /**
- * Se il mese è completo, un eventuale force SI rimasto da prima è obsoleto:
- * si torna in automatico (NO). Così i liberi fittizi si disattivano da soli.
+ * Quando il mese diventa completo (ultimo turno inserito), un force SI
+ * rimasto da prima è obsoleto → torna in automatico (NO).
+ * NON chiamare in lettura/render: altrimenti il click manuale SI su mese
+ * completo viene azzerato subito e il tasto sembra rotto.
  */
 function reconcileLiberiFittizi(personId, month){
   if(!personId || !month) return;
@@ -1240,7 +1242,6 @@ function reconcileLiberiFittizi(personId, month){
   }
 }
 function effectiveLiberiFittizi(personId, month){
-  reconcileLiberiFittizi(personId, month);
   const ov=getLiberiFittiziOverride(personId, month);
   if(ov==="si") return { use:true, mode:"manuale", override:"si" };
   if(ov==="no") return { use:false, mode:"manuale", override:"no" };
