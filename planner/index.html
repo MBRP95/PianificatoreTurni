@@ -87,14 +87,20 @@ body.cloud-embed main{max-width:none;padding:10px 10px 28px}
 body.cloud-embed header .wrap{max-width:none}
 .month-ferie{margin-bottom:14px}
 .month-ferie h3{margin:0 0 6px;font-size:.92rem}
-/* Tabella ferie/PAR: colonne compatte, header su 2 righe, niente vuoti larghi */
+/* Tabella ferie/PAR: piena larghezza, header su 2 righe */
 #view-ferie .month-ferie > div{overflow-x:auto}
-#view-ferie .summary{width:max-content;font-size:.8rem;border-collapse:collapse;table-layout:auto}
-#view-ferie .summary th,#view-ferie .summary td{padding:5px 5px;vertical-align:middle}
-#view-ferie .summary th{font-size:.66rem;letter-spacing:.01em;white-space:normal;line-height:1.15;max-width:4.8rem;text-align:center;vertical-align:bottom}
-#view-ferie .summary th:first-child{max-width:9rem;text-align:left}
-#view-ferie .summary td:first-child{max-width:9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
-#view-ferie .summary td.num{padding-left:5px;padding-right:5px;width:1%;white-space:nowrap}
+#view-ferie .summary,
+#view-ferie #ferieYearTable{width:100%;font-size:.8rem;border-collapse:collapse;table-layout:fixed}
+#view-ferie .summary th,#view-ferie .summary td,
+#view-ferie #ferieYearTable th,#view-ferie #ferieYearTable td{padding:6px 4px;vertical-align:middle}
+#view-ferie .summary th,
+#view-ferie #ferieYearTable th{font-size:.66rem;letter-spacing:.01em;white-space:normal;line-height:1.15;text-align:center;vertical-align:bottom}
+#view-ferie .summary th:first-child,
+#view-ferie #ferieYearTable th:first-child,
+#view-ferie .summary td:first-child,
+#view-ferie #ferieYearTable td:first-child{width:12%;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+#view-ferie .summary td.num,
+#view-ferie #ferieYearTable td.num{white-space:nowrap;text-align:right}
 .field-wrap{display:inline-flex;align-items:center;gap:3px;justify-content:flex-end}
 .field-wrap input.mat-input{width:72px;border:1px solid var(--line);border-radius:6px;padding:3px 5px;font:inherit;font-size:.8rem;text-align:right}
 .field-wrap input.mat-input.auto{background:#f4f7f9;color:var(--muted)}
