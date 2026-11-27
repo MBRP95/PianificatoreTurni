@@ -87,13 +87,14 @@ body.cloud-embed main{max-width:none;padding:10px 10px 28px}
 body.cloud-embed header .wrap{max-width:none}
 .month-ferie{margin-bottom:14px}
 .month-ferie h3{margin:0 0 6px;font-size:.92rem}
-/* Tabella ferie/PAR: leggibile, colonne strette senza vuoti larghi */
+/* Tabella ferie/PAR: colonne compatte, header su 2 righe, niente vuoti larghi */
 #view-ferie .month-ferie > div{overflow-x:auto}
-#view-ferie .summary{width:max-content;max-width:100%;font-size:.8rem;border-collapse:collapse}
-#view-ferie .summary th,#view-ferie .summary td{padding:5px 6px;vertical-align:middle}
-#view-ferie .summary th{font-size:.68rem;letter-spacing:.02em;white-space:nowrap;line-height:1.2;max-width:none}
-#view-ferie .summary td:first-child{max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
-#view-ferie .summary td.num{padding-left:6px;padding-right:6px}
+#view-ferie .summary{width:max-content;font-size:.8rem;border-collapse:collapse;table-layout:auto}
+#view-ferie .summary th,#view-ferie .summary td{padding:5px 5px;vertical-align:middle}
+#view-ferie .summary th{font-size:.66rem;letter-spacing:.01em;white-space:normal;line-height:1.15;max-width:4.8rem;text-align:center;vertical-align:bottom}
+#view-ferie .summary th:first-child{max-width:9rem;text-align:left}
+#view-ferie .summary td:first-child{max-width:9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+#view-ferie .summary td.num{padding-left:5px;padding-right:5px;width:1%;white-space:nowrap}
 .field-wrap{display:inline-flex;align-items:center;gap:3px;justify-content:flex-end}
 .field-wrap input.mat-input{width:72px;border:1px solid var(--line);border-radius:6px;padding:3px 5px;font:inherit;font-size:.8rem;text-align:right}
 .field-wrap input.mat-input.auto{background:#f4f7f9;color:var(--muted)}
@@ -158,8 +159,20 @@ table.turni td.cell.note-only{background:#f7f8fa !important}
 }
 #btnHoursExport:hover{background:#f4f6f8;filter:none}
 body.cloud-embed #btnHoursExport{right:10px;bottom:10px}
+/* Nascondi subito il box OneDrive in modalità cloud (evita flash all’apertura) */
+html.cloud-boot #archivePanel,
+html.cloud-boot #btnNewYear{display:none!important}
 
 </style>
+<script>
+(function(){
+  try{
+    if(new URLSearchParams(location.search).get("cloud")==="1"){
+      document.documentElement.classList.add("cloud-boot");
+    }
+  }catch(_){}
+})();
+</script>
 </head>
 <body>
 
@@ -180,7 +193,7 @@ body.cloud-embed #btnHoursExport{right:10px;bottom:10px}
       <button class="primary" id="chooseFolder" type="button">Seleziona cartella OneDrive</button>
       <button id="loadArchive" type="button">Carica archivio</button>
     </div>
-    <div class="status" id="folderStatus">Nessuna cartella selezionata. Clicca <b>Seleziona cartella OneDrive</b> oppure <b>Carica archivio</b> (aprirà la scelta cartella). I salvataggi vanno in dati/turni/.</div>
+    <div class="status" id="folderStatus"></div>
   </section>
 
   <section class="panel">
@@ -1094,7 +1107,7 @@ async function saveState(announce=true){
     else if(folderOk && folderHandle) el.textContent=`Salvato in OneDrive (${folderHandle.name}/dati/turni) · `+new Date(state.updatedAt).toLocaleString("it-IT");
     else if(folderHandle && folderErr) el.textContent=`Salvato in locale; OneDrive non riuscito: ${folderErr}`;
     else if(CLOUD_MODE && folderErr) el.textContent=`Salvato in locale; Firebase: ${folderErr}`;
-    else el.textContent="Salvato in locale · "+new Date(state.updatedAt).toLocaleString("it-IT")+(folderHandle?"":" · seleziona la cartella OneDrive per l’archivio condiviso");
+    else el.textContent="Salvato in locale · "+new Date(state.updatedAt).toLocaleString("it-IT")+(CLOUD_MODE||folderHandle?"":" · seleziona la cartella OneDrive per l’archivio condiviso");
   }
   if(folderOk) setFolderStatus(CLOUD_MODE
     ? `Ultimo salvataggio Firebase: ${CLOUD_SHOP_ID}/${getYear()} · `+new Date(state.updatedAt).toLocaleString("it-IT")
@@ -1874,13 +1887,13 @@ function renderFerie(){
     <div style="overflow-x:auto"><table class="summary">
       <thead><tr>
         <th>Risorsa</th>
-        <th>Liberi fittizi</th>
+        <th>Liberi<br>fittizi</th>
         <th title="Liberi pianificati usati nel calcolo maturazione">Liberi</th>
-        <th title="Giorni utili considerati alla maturazione ferie">Giorni utili ferie</th>
-        <th title="Giorni utili considerati alla maturazione PAR">Giorni utili PAR</th>
-        <th>Ferie gg</th><th>PAR h</th>
-        <th>F maturato</th><th>F goduto</th><th>F saldo</th><th>F saldo−mat.mese</th>
-        <th>PAR maturato</th><th>PAR goduto</th><th>PAR saldo</th><th>PAR saldo−mat.mese</th>
+        <th title="Giorni utili considerati alla maturazione ferie">Giorni utili<br>ferie</th>
+        <th title="Giorni utili considerati alla maturazione PAR">Giorni utili<br>PAR</th>
+        <th>Ferie<br>gg</th><th>PAR<br>h</th>
+        <th>F<br>maturato</th><th>F<br>goduto</th><th>F<br>saldo</th><th>F saldo−<br>mat.mese</th>
+        <th>PAR<br>maturato</th><th>PAR<br>goduto</th><th>PAR<br>saldo</th><th>PAR saldo−<br>mat.mese</th>
       </tr></thead><tbody>`;
     for(const p of peopleForMonth(getYear(), month)){
       const u=usageInMonth(p.id, month);
