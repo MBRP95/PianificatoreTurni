@@ -109,10 +109,10 @@ button.mode-sw{min-width:24px;padding:3px 5px;font-size:.68rem;font-weight:800;l
 button.mode-sw.auto{background:var(--accent-soft);border-color:#b7d7cb;color:var(--accent)}
 button.mode-sw.manuale{background:#fff4e5;border-color:#e0c08a;color:#8a5a00}
 .fittizi-wrap{display:inline-flex;align-items:center;justify-content:center}
-button.fittizi-sw{min-width:46px;padding:3px 7px;font-size:.7rem;font-weight:800;letter-spacing:.03em;border-radius:6px}
+button.fittizi-sw{min-width:52px;padding:3px 8px;font-size:.7rem;font-weight:800;letter-spacing:.03em;border-radius:6px}
+button.fittizi-sw.auto{background:var(--accent-soft);border-color:#9dc3e6;color:#014486}
 button.fittizi-sw.si{background:#EAF5FE;border-color:#9dc3e6;color:#014486}
 button.fittizi-sw.no{background:#f4f6f8;border-color:#c9c7c5;color:#3e3e3c}
-button.fittizi-sw .fittizi-a{margin-left:3px;font-size:.62rem;opacity:.75;font-weight:700}
 #btnHoursExport.hidden{display:none!important}
 .month-needs{margin-top:18px;padding-top:14px;border-top:1px solid var(--line)}
 .month-needs h3{margin:0 0 6px;font-size:.95rem}
@@ -1267,20 +1267,12 @@ function effectiveLiberiFittizi(personId, month){
   const use=autoLiberiFittizi(personId, month);
   return { use, mode:"auto", override:null };
 }
-/** Ciclo: auto → forza opposto → forza stesso dell'auto → auto. */
+/** Ciclo a 3 stati: Auto → SI → NO → Auto. */
 function cycleLiberiFittiziOverride(personId, month){
-  const auto=autoLiberiFittizi(personId, month);
   const ov=getLiberiFittiziOverride(personId, month);
-  if(ov==null){
-    setLiberiFittiziOverride(personId, month, auto ? "no" : "si");
-    return;
-  }
-  const forcedSi=ov==="si";
-  if(forcedSi === auto){
-    setLiberiFittiziOverride(personId, month, null);
-  }else{
-    setLiberiFittiziOverride(personId, month, auto ? "si" : "no");
-  }
+  if(ov==null) setLiberiFittiziOverride(personId, month, "si");
+  else if(ov==="si") setLiberiFittiziOverride(personId, month, "no");
+  else setLiberiFittiziOverride(personId, month, null);
 }
 
 function monthAccrualIncrement(person, month){
@@ -1873,15 +1865,23 @@ function fieldEditHtml(pid, month, kind, field, value, mode){
 }
 
 function fittiziFlagHtml(pid, month, fittizi, fittiziMode){
-  const si=!!fittizi;
   const auto=fittiziMode!=="manuale";
-  const cls=si?"si":"no";
-  const label=si?"SI":"NO";
-  const title=auto
-    ? `Liberi fittizi automatici = ${label} — clicca per forzare`
-    : `Liberi fittizi forzati = ${label} — clicca per cambiare / tornare ad auto`;
+  let cls, label, title;
+  if(auto){
+    cls="auto";
+    label="AUTO";
+    title=`Auto (ora ${fittizi?"SI":"NO"}) — clicca: SI`;
+  }else if(fittizi){
+    cls="si";
+    label="SI";
+    title="SI — clicca: NO";
+  }else{
+    cls="no";
+    label="NO";
+    title="NO — clicca: AUTO";
+  }
   return `<td class="num"><div class="fittizi-wrap">
-    <button type="button" class="fittizi-sw ${cls}" title="${title}" data-fittizi-pid="${pid}" data-fittizi-month="${month}">${label}${auto?`<span class="fittizi-a">A</span>`:""}</button>
+    <button type="button" class="fittizi-sw ${cls}" title="${title}" data-fittizi-pid="${pid}" data-fittizi-month="${month}">${label}</button>
   </div></td>`;
 }
 
