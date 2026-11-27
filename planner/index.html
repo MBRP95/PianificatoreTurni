@@ -186,7 +186,7 @@ body.cloud-embed #btnHoursExport{right:10px;bottom:10px}
 
   <section class="panel hidden" id="view-ferie">
     <h2>Calcolo ferie e PAR — mese per mese</h2>
-    <p class="hint">Liberi fittizi = SI finché ogni giorno in forza del mese ha un turno/assenza (nota sola non basta). A mese completo diventano NO in automatico. Puoi forzare SI/NO; la A indica automatico.</p>
+    <p class="hint">Liberi fittizi = SI finché ogni giorno in forza del mese ha un turno/assenza (nota sola non basta). A mese completo diventano NO in automatico. Puoi forzare SI/NO; la A indica automatico. Per ogni giorno utile si maturano <b>0,61538 gg ferie</b> e <b>0,4 h PAR</b> (full-time 40h; part-time × ore settimanali/40). RIPOSO non matura; CONGEDO/MALATTIA maturano solo ferie.</p>
     <div id="ferieMonths"></div>
     <h2 style="margin-top:8px">Riepilogo annuale</h2>
     <div style="overflow-x:auto"><table class="summary" id="ferieYearTable"></table></div>
@@ -1439,8 +1439,20 @@ function balancesFor(person, month){
     godutoParMode: god.parMode||"auto",
     liberi: matured.liberi!=null ? matured.liberi : 0,
     fittizi: !!matured.fittizi,
-    fittiziMode: matured.fittiziMode||"auto"
+    fittiziMode: matured.fittiziMode||"auto",
+    giorniUtiliFerie: matured.ferieDays!=null ? matured.ferieDays : 0,
+    giorniUtiliPar: matured.parDays!=null ? matured.parDays : 0
   };
+}
+
+/** Celle “giorni utili” (ferie / PAR se diversi per congedo-malattia). */
+function giorniUtiliHtml(fDays, pDays){
+  const f=Number(fDays)||0;
+  const p=Number(pDays)||0;
+  if(f===p){
+    return `<td class="num" title="Giorni utili considerati alla maturazione">${f}</td>`;
+  }
+  return `<td class="num" title="Giorni utili ferie: ${f}; giorni utili PAR: ${p} (CONGEDO/MALATTIA esclusi dal PAR)">${f} / ${p}</td>`;
 }
 
 /* ---- UI ---- */
@@ -1784,7 +1796,9 @@ function renderFerie(){
     html+=`<div class="month-ferie"><h3>${MONTHS[month-1]} ${getYear()}</h3>
     <div style="overflow-x:auto"><table class="summary">
       <thead><tr>
-        <th>Risorsa</th><th>Liberi fittizi</th><th>Ferie gg</th><th>PAR h</th>
+        <th>Risorsa</th><th>Liberi fittizi</th>
+        <th title="Giorni utili considerati alla maturazione (se due numeri: ferie / PAR)">Giorni utili</th>
+        <th>Ferie gg</th><th>PAR h</th>
         <th>F maturato</th><th>F goduto</th><th>F saldo</th><th>F saldo−mat.mese</th>
         <th>PAR maturato</th><th>PAR goduto</th><th>PAR saldo</th><th>PAR saldo−mat.mese</th>
       </tr></thead><tbody>`;
@@ -1794,6 +1808,7 @@ function renderFerie(){
       html+=`<tr>
         <td>${escapeHtml(p.name)}</td>
         ${fittiziFlagHtml(p.id, month, b.fittizi, b.fittiziMode, b.liberi)}
+        ${giorniUtiliHtml(b.giorniUtiliFerie, b.giorniUtiliPar)}
         <td class="num">${u.ferieDays}</td>
         <td class="num">${fmt(u.parHours)}</td>
         ${fieldEditHtml(p.id, month, "maturato", "ferie", b.ferieMaturato, b.maturatoFerieMode)}
