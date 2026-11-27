@@ -2905,20 +2905,38 @@ function isModenaCloudShop(){
   return isModenaShopIdOrName(CLOUD_SHOP_ID, CLOUD_SHOP_NAME);
 }
 
+/** True se la lista dipendenti è ancora il roster demo built-in (Giulia/Chiara/…). */
+function looksLikeBuiltinSeedPeople(people){
+  const list=Array.isArray(people)?people:[];
+  if(list.length!==DEFAULT_PEOPLE.length) return false;
+  const seedNames=new Set(DEFAULT_PEOPLE.map(p=>String(p.name||"").trim().toUpperCase()));
+  return list.every(p=>seedNames.has(String(p.name||"").trim().toUpperCase()));
+}
+function archiveHasAnyTurni(turni){
+  if(!turni || typeof turni!=="object") return false;
+  for(const pid of Object.keys(turni)){
+    const bag=turni[pid];
+    if(bag && typeof bag==="object" && Object.keys(bag).length>0) return true;
+  }
+  return false;
+}
+/** Archivio anno futuro creato per errore col seed 2026 (stessi nomi demo, senza turni). */
+function isStaleSeededFutureYear(st, year){
+  const y=Number(year);
+  if(!y || y<=DEFAULT_YEAR) return false;
+  return looksLikeBuiltinSeedPeople(st?.people) && !archiveHasAnyTurni(st?.turni);
+}
+
 async function seedModenaCloudIfNeeded(targetYear){
   if(!isModenaCloudShop()) return false;
-  // Seed ufficiale Modena (dipendenti + turni 2026) solo se Firebase è vuoto
-  const seeded=defaultState(Number(targetYear)||DEFAULT_YEAR);
+  const y=Number(targetYear)||DEFAULT_YEAR;
+  // Il roster demo + turni seed valgono SOLO per il 2026.
+  // Anni successivi devono arrivare da rollover del personale reale, non da Giulia/Chiara/…
+  if(y!==DEFAULT_YEAR) return false;
+  const seeded=defaultState(y);
   seeded.archiveId=normalizeArchiveId(CLOUD_SHOP_ID||"modena");
   seeded.archiveLabel=CLOUD_SHOP_NAME || "Modena";
-  seeded.year=Number(targetYear)||DEFAULT_YEAR;
-  // I turni seed sono solo per DEFAULT_YEAR (2026)
-  if(Number(seeded.year)!==DEFAULT_YEAR){
-    seeded.turni={};
-    seeded.maturato={};
-    seeded.goduto={};
-    for(const p of seeded.people){ seeded.turni[p.id]={}; }
-  }
+  seeded.year=y;
   state=ensureSeedBalances(seeded);
   currentMonth=Math.min(12, Math.max(1, new Date().getFullYear()===getYear()? new Date().getMonth()+1 : 1));
   setActiveYear(state.year);
@@ -2952,7 +2970,10 @@ async function initCloudFromParent(){
     const remote=await window.parent?.TurniAuth?.loadArchive?.(CLOUD_SHOP_ID, targetYear);
     const hasPeople=remote && Array.isArray(remote.people) && remote.people.length>0;
     const remoteOk=hasPeople && (remote.turni==null || typeof remote.turni==="object");
-    if(remoteOk && !isWrongShopCloudArchive(remote, CLOUD_SHOP_ID, CLOUD_SHOP_NAME)){
+    const remoteUsable=remoteOk
+      && !isWrongShopCloudArchive(remote, CLOUD_SHOP_ID, CLOUD_SHOP_NAME)
+      && !isStaleSeededFutureYear(remote, targetYear);
+    if(remoteUsable){
       const hydrated=hydrateStateFromObject({
         ...remote,
         turni: remote.turni && typeof remote.turni==="object" ? remote.turni : {}
@@ -2970,16 +2991,20 @@ async function initCloudFromParent(){
     }
     const prevYear=targetYear-1;
     if(await applyCloudRolloverFromPrev(prevYear, targetYear)) return;
-    // Modena senza archivio cloud: ripristina il dataset built-in (non lasciare vuoto)
+    // Seed demo solo per il 2026 Modena; altri anni restano vuoti se manca il precedente
     if(await seedModenaCloudIfNeeded(targetYear)) return;
     state=emptyCloudState(targetYear, CLOUD_SHOP_ID, CLOUD_SHOP_NAME);
-    setFolderStatus("");
+    if(Number(targetYear)>DEFAULT_YEAR){
+      setFolderStatus(`Anno ${targetYear} vuoto: apri prima il ${prevYear} con il personale aggiornato, poi rientra nel ${targetYear} (rollover automatico).`);
+    }else{
+      setFolderStatus("");
+    }
   }catch(e){
     if(await seedModenaCloudIfNeeded(targetYear)) return;
     state=emptyCloudState(targetYear, CLOUD_SHOP_ID, CLOUD_SHOP_NAME);
     setFolderStatus("Lettura Firebase non riuscita: "+e.message);
   }
-  // Rete di sicurezza: se siamo ancora a 0 dipendenti su Modena, forza il seed
+  // Rete di sicurezza: seed demo solo 2026 Modena se ancora vuoto
   if(!(state.people||[]).length){
     await seedModenaCloudIfNeeded(targetYear);
   }
