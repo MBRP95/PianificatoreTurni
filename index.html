@@ -230,9 +230,9 @@ main.planner-open iframe#plannerFrame{min-height:calc(100vh - 120px);height:calc
   </section>
 </main>
 
-<script src="./js/firebase-config.js?v=27"></script>
-<script src="./js/auth.js?v=27"></script>
-<script type="module" src="./js/firebase-init.js?v=27"></script>
+<script src="./js/firebase-config.js?v=28"></script>
+<script src="./js/auth.js?v=28"></script>
+<script type="module" src="./js/firebase-init.js?v=28"></script>
 <script>
 let currentProfile = null;
 let loginInProgress = false;
@@ -299,18 +299,12 @@ function renderYearOptions(years, selected){
 
 async function fillYears(){
   const now = new Date().getFullYear();
-  const shopId = currentProfile?.shopId || "";
-  const current = Number($("yearSelect")?.value) || Number($("yearSelectBar")?.value) || now;
-  const years = new Set();
-  // Finestra mobile: da 2026 fino ad anno corrente + 1 (nel 2028 → …2029, e così via)
-  for(let i = MIN_PLAN_YEAR; i <= Math.max(now + 1, current); i++) years.add(i);
-  try{
-    const remote = await window.TurniAuth?.listArchiveYears?.(shopId);
-    if(Array.isArray(remote)) remote.forEach((y)=>years.add(Number(y)));
-  }catch(_){}
-  const maxKnown = Math.max(...years, now + 1);
-  for(let i = MIN_PLAN_YEAR; i <= maxKnown; i++) years.add(i);
-  renderYearOptions([...years], current);
+  const maxYear = now + 1; // oggi 2026 → fino al 2027; nel 2027 → fino al 2028; ecc.
+  const currentRaw = Number($("yearSelect")?.value) || Number($("yearSelectBar")?.value) || now;
+  const current = Math.min(Math.max(currentRaw, MIN_PLAN_YEAR), maxYear);
+  const years = [];
+  for(let i = MIN_PLAN_YEAR; i <= maxYear; i++) years.push(i);
+  renderYearOptions(years, current);
 }
 
 function syncYearSelects(fromId){
