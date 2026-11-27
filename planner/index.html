@@ -1971,11 +1971,11 @@ async function exportMonthExcel(){
   }catch(err){ alert("Export Excel fallito: "+err.message); }
 }
 
-/** Intestazione giorno stile tabellone (2 righe, come foglio obiettivo). */
+/** Intestazione giorno stile Turni_MODENA (testo lungo, wrap naturale). */
 const WEEKDAYS_LONG_IT = ["lunedì","martedì","mercoledì","giovedì","venerdì","sabato","domenica"];
 function formatBoardDateHeader(d){
   const wd=WEEKDAYS_LONG_IT[(d.getDay()+6)%7];
-  return `${wd}\n${d.getDate()} ${MONTHS[d.getMonth()].toLowerCase()} ${d.getFullYear()}`;
+  return `${wd} ${d.getDate()} ${MONTHS[d.getMonth()].toLowerCase()} ${d.getFullYear()}`;
 }
 /** Nome corto in tabellone (es. BEATRICE), come nel foglio obiettivo. */
 function boardPersonLabel(person){
@@ -2006,110 +2006,123 @@ function boardEntryText(e){
 }
 function boardEntryStyle(e, ds, store){
   e=normalizeEntry(e);
-  // Palette allineata al foglio obiettivo MB MODENA
-  if(e.kind==="FERIE" || e.kind==="RIPOSO") return { bg:"92D050", color:"000000" };
-  if(e.kind==="FESTIVO") return { bg:"FF0000", color:"000000" };
-  if(e.kind===FUORI_SEDE || (e.kind && LEGACY_CITIES.includes(e.kind))) return { bg:"FF0000", color:"000000" };
-  if(e.kind==="MALATTIA") return { bg:"FF0000", color:"000000" };
-  if(e.kind==="CONGEDO"||e.kind==="PERMESSO STUDIO") return { bg:"FFC000", color:"000000" };
-  if(e.par && !e.work) return { bg:"FFFF00", color:"000000" };
-  if(e.work && e.par) return { bg:"FFFF00", color:"000000" };
-  if(e.allatt && !e.par && !e.work) return { bg:"FFC000", color:"000000" };
-  if(e.work) return { bg:"FFFFFF", color:"000000" };
-  if(e.note) return { bg:"92D050", color:"000000" };
-  if(isHoliday(ds, store)) return { bg:"FF0000", color:"000000" };
-  return { bg:"FFFFFF", color:"000000" };
+  // Palette + size allineati a samples/Turni_MODENA_2026.xlsx
+  const base={color:"000000"};
+  if(e.kind==="RIPOSO") return {...base, bg:"92D050", size:8};
+  if(e.kind==="FERIE") return {...base, bg:"92D050", size:11};
+  if(e.kind==="FESTIVO") return {...base, bg:"FF0000", size:11};
+  if(e.kind===FUORI_SEDE || (e.kind && LEGACY_CITIES.includes(e.kind))) return {...base, bg:"FF0000", size:11};
+  if(e.kind==="MALATTIA") return {...base, bg:"FF0000", size:11};
+  if(e.kind==="CONGEDO"||e.kind==="PERMESSO STUDIO") return {...base, bg:"FFC000", size:11};
+  if(e.par && !e.work) return {...base, bg:"FFFF00", size:11};
+  if(e.work && e.par) return {...base, bg:"FFFF00", size:11};
+  if(e.allatt && !e.par && !e.work) return {...base, bg:"FFC000", size:11};
+  if(e.work) return {...base, bg:"FFFFFF", size:11};
+  if(e.note) return {...base, bg:"92D050", size:8};
+  if(isHoliday(ds, store)) return {...base, bg:"FF0000", size:11};
+  return {...base, bg:"FFFFFF", size:11};
 }
-function boardBorder(){
-  const s={style:"thin",color:{argb:"FFB0B0B0"}};
+function boardBorder(style="thin"){
+  const s={style,color:{argb:"FF000000"}};
   return {top:s,left:s,bottom:s,right:s};
 }
-function styleBoardCell(cell,{value,bg,color="000000",bold=false,size=10,align="center",border=true}){
+function styleBoardCell(cell,{value,bg,color="000000",bold=false,italic=false,size=8,align="center",border="thin",wrap=true}){
   if(value!==undefined) cell.value=value;
-  cell.alignment={horizontal:align,vertical:"middle",wrapText:true};
-  cell.font={name:"Calibri",size,bold,color:{argb:"FF"+color}};
-  if(border) cell.border=boardBorder();
+  cell.alignment={horizontal:align,vertical:"middle",wrapText:!!wrap};
+  cell.font={name:"Calibri",family:2,size,bold,italic,color:{argb:"FF"+color},scheme:"minor"};
+  if(border) cell.border=boardBorder(border===true?"thin":border);
+  else cell.border={};
   if(bg) cell.fill=fillStyle(bg);
 }
 
-/** Un foglio/mese nello stile tabellone obiettivo (giorno + Strao stretti). */
+/** Un foglio/mese nello stile Turni_MODENA_2026 (A stretta, B nomi, giorno+Strao). */
 function writeBoardMonthSheet(wb, year, month, storeLabel){
   const people=peopleForMonth(year, month);
   const weeks=weeksForMonth(year, month);
   const ws=wb.addWorksheet(MONTHS_UPPER[month-1],{
-    pageSetup:{orientation:"landscape",fitToPage:true,fitToWidth:1,fitToHeight:0,horizontalCentered:true},
-    views:[{state:"frozen", xSplit:1, ySplit:2}]
+    pageSetup:{orientation:"landscape",fitToPage:true,fitToWidth:1,fitToHeight:0},
+    // Nessun blocco celle in alto / a sinistra (come campione obiettivo)
+    views:[{state:"normal", showGridLines:true, zoomScale:90, zoomScaleNormal:90}]
   });
-  // Proporzioni come obiettivo: nomi medi, giorno largo, Strao molto stretto, tot a destra
-  ws.getColumn(1).width=12;
+  // Larghezze da samples/Turni_MODENA_2026.xlsx
+  ws.getColumn(1).width=3.44;   // A spacer
+  ws.getColumn(2).width=20.44;  // B nomi
+  const dayWidths=[20.44,20.44,21.33,19.55,17.44,19.55,18.55];
   for(let i=0;i<7;i++){
-    ws.getColumn(2+i*2).width=15.5;
-    ws.getColumn(3+i*2).width=4.5;
+    ws.getColumn(3+i*2).width=dayWidths[i]; // giorno
+    ws.getColumn(4+i*2).width=4.44;         // Strao
   }
-  ws.getColumn(16).width=5;
+  ws.getColumn(17).width=8.89; // Q tot strao
 
   let row=1;
-  // Titolo solo a sinistra (merged), come "Dicembre 2026 - MB MODENA"
-  ws.mergeCells(row,1,row,4);
-  styleBoardCell(ws.getCell(row,1),{
+  // Titolo solo in B1, Calibri 8 bold (non merge, non freeze)
+  styleBoardCell(ws.getCell(row,2),{
     value:`${MONTHS[month-1]} ${year} - ${storeLabel}`,
-    bg:"FFFF00", bold:true, size:14, align:"left"
+    bg:"FFFF00", bold:true, size:8, align:"left", border:"medium", wrap:false
   });
-  for(let c=5;c<=16;c++){
-    const cell=ws.getCell(row,c);
-    cell.value="";
-    cell.border={};
-  }
-  ws.getRow(row).height=22;
+  ws.getRow(row).height=15;
+  row++;
+  // riga vuota sotto il titolo, come nel campione
+  ws.getRow(row).height=15;
   row++;
 
   if(!people.length){
-    styleBoardCell(ws.getCell(row,1),{value:"Nessuna risorsa attiva",bg:"FFFFFF",align:"left"});
+    styleBoardCell(ws.getCell(row,2),{value:"Nessuna risorsa attiva",bg:"FFFFFF",align:"left",size:8});
     return;
   }
 
   for(const week of weeks){
-    // Intestazione settimana
-    styleBoardCell(ws.getCell(row,1),{value:"",bg:"FFFF00",size:9});
+    // Intestazione settimana: B giallo vuoto, poi data | Strao × 7
+    styleBoardCell(ws.getCell(row,2),{value:"",bg:"FFCC00",bold:true,size:8});
     week.forEach((d,i)=>{
-      styleBoardCell(ws.getCell(row,2+i*2),{value:formatBoardDateHeader(d),bg:"FFFF00",bold:true,size:9});
-      styleBoardCell(ws.getCell(row,3+i*2),{value:"Strao",bg:"FFFF00",bold:true,size:8});
+      styleBoardCell(ws.getCell(row,3+i*2),{
+        value:formatBoardDateHeader(d),
+        bg:"FFFF00", bold:true, italic:true, size:8
+      });
+      styleBoardCell(ws.getCell(row,4+i*2),{
+        value:"Strao",
+        bg:"FFFF00", bold:true, italic:true, size:8
+      });
     });
-    styleBoardCell(ws.getCell(row,16),{value:"",bg:"FFFF00",size:8});
-    ws.getRow(row).height=32;
+    // nessuna intestazione su Q (come campione)
     row++;
 
     people.forEach((person)=>{
       const dayOts=weekDayOvertimeList(person, week);
-      styleBoardCell(ws.getCell(row,1),{
+      const straoAddrs=[];
+      styleBoardCell(ws.getCell(row,2),{
         value:boardPersonLabel(person),
-        bg:"C6EFCE", bold:true, size:11, align:"left"
+        bg:"C6EFCE", bold:false, size:8, align:"center"
       });
       week.forEach((d,i)=>{
         const ds=iso(d);
-        const dayCell=ws.getCell(row,2+i*2);
-        const straoCell=ws.getCell(row,3+i*2);
+        const dayCell=ws.getCell(row,3+i*2);
+        const straoCell=ws.getCell(row,4+i*2);
+        straoAddrs.push(straoCell.address);
         if(!personActiveOn(person, ds)){
-          styleBoardCell(dayCell,{value:"",bg:"F2F2F2",size:10});
-          styleBoardCell(straoCell,{value:"",bg:"F2F2F2",size:9});
+          styleBoardCell(dayCell,{value:"",bg:"F2F2F2",size:8});
+          styleBoardCell(straoCell,{value:"",bg:"F2F2F2",size:8});
           return;
         }
         const e=getEntry(person.id, ds);
         const txt=boardEntryText(e);
         const st=boardEntryStyle(e, ds, person.store);
-        styleBoardCell(dayCell,{value:txt||"",bg:st.bg,color:st.color,size:10});
+        styleBoardCell(dayCell,{value:txt||"",bg:st.bg,color:st.color,size:st.size||11});
         const ot=dayOts[i]||0;
-        styleBoardCell(straoCell,{value:ot>0?round3(ot):"",bg:"FFFFFF",size:9});
+        styleBoardCell(straoCell,{
+          value:ot>0?round3(ot):0,
+          bg:"FFFFFF", size:8, wrap:false
+        });
       });
-      const weekOt=weekOvertime(person, week);
-      styleBoardCell(ws.getCell(row,16),{value:weekOt>0?round3(weekOt):0,bg:"FFFFFF",size:9});
-      ws.getRow(row).height=18;
+      // Tot strao settimana (somma colonne Strao), numFmt 0
+      const totCell=ws.getCell(row,17);
+      totCell.value={formula:straoAddrs.join("+")};
+      totCell.numFmt="0";
+      styleBoardCell(totCell,{bg:"FFFFFF",size:8,wrap:false});
       row++;
     });
 
-    // riga note/vuota sotto il blocco settimana (come obiettivo)
-    for(let c=1;c<=16;c++) styleBoardCell(ws.getCell(row,c),{value:"",bg:"FFFFFF",size:9});
-    ws.getRow(row).height=16;
+    // riga vuota di separazione tra settimane
     row++;
   }
 }
