@@ -327,15 +327,15 @@ async function fillYears(){
   const shopId = currentProfile?.shopId || "";
   const current = Number($("yearSelect")?.value) || Number($("yearSelectBar")?.value) || now;
   const years = new Set();
-  // Sempre almeno da MIN_PLAN_YEAR fino all'anno corrente + 1 (così c'è sempre il prossimo)
-  for(let i = MIN_PLAN_YEAR; i <= Math.max(now + 1, current); i++) years.add(i);
+  // Sempre da 2026 fino ad almeno anno corrente + 2 (es. nel 2028 → …2030)
+  for(let i = MIN_PLAN_YEAR; i <= Math.max(now + 2, current); i++) years.add(i);
   for(const y of readExtraYears(shopId)) years.add(y);
   try{
     const remote = await window.TurniAuth?.listArchiveYears?.(shopId);
     if(Array.isArray(remote)) remote.forEach((y)=>years.add(Number(y)));
   }catch(_){}
   // Se in Firebase c'è un anno alto (es. 2035), copri anche i buchi fino a lì
-  const maxKnown = Math.max(...years, now + 1);
+  const maxKnown = Math.max(...years, now + 2);
   for(let i = MIN_PLAN_YEAR; i <= maxKnown; i++) years.add(i);
   renderYearOptions([...years], current);
 }
