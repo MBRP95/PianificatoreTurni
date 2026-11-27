@@ -100,6 +100,19 @@ button.fittizi-sw.si{background:#EAF5FE;border-color:#9dc3e6;color:#014486}
 button.fittizi-sw.no{background:#f4f6f8;border-color:#c9c7c5;color:#3e3e3c}
 button.fittizi-sw .fittizi-a{margin-left:4px;font-size:.65rem;opacity:.75;font-weight:700}
 .fittizi-liberi{font-size:.78rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.month-needs{margin-top:18px;padding-top:14px;border-top:1px solid var(--line)}
+.month-needs h3{margin:0 0 6px;font-size:.95rem}
+.month-needs-list{display:grid;gap:10px}
+.month-need-row{display:grid;grid-template-columns:minmax(140px,220px) 1fr;gap:10px;align-items:start;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fafbfc}
+.month-need-row .need-name{font-weight:700;font-size:.86rem;padding-top:8px;line-height:1.3}
+.month-need-row .need-store{display:block;font-weight:500;font-size:.75rem;color:var(--muted);margin-top:2px}
+.month-need-row textarea{width:100%;min-height:64px;resize:vertical;border:1px solid var(--line);border-radius:8px;padding:9px 10px;font:inherit;line-height:1.4;background:#fff}
+.month-need-row textarea:focus{outline:2px solid rgba(1,118,211,.28);outline-offset:1px;border-color:#9dc3e6}
+.month-need-row textarea::placeholder{color:#9a9a98}
+@media(max-width:700px){
+  .month-need-row{grid-template-columns:1fr}
+  .month-need-row .need-name{padding-top:0}
+}
 /* popover menu */
 #cellMenu{position:fixed;z-index:100;min-width:220px;max-width:min(320px,calc(100vw - 16px));max-height:min(70vh,520px);overflow-y:auto;-webkit-overflow-scrolling:touch;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 16px 40px rgba(0,0,0,.16);padding:6px;display:none}
 #cellMenu.open{display:block}
@@ -181,6 +194,11 @@ body.cloud-embed #btnHoursExport{right:10px;bottom:10px}
     </div>
     <div id="monthTabs"></div>
     <div id="turniGrid"></div>
+    <div class="month-needs" id="monthNeedsPanel">
+      <h3>Esigenze del mese</h3>
+      <p class="hint">Di fianco a ogni nome puoi lasciare una nota con le esigenze per il mese aperto (ferie richieste, vincoli, preferenze orario, ecc.). Si salva con i turni.</p>
+      <div class="month-needs-list" id="monthNeeds"></div>
+    </div>
     <div class="status" id="saveStatus"></div>
   </section>
 
@@ -297,6 +315,7 @@ function getActiveYearPref(){
 function ensureSeedBalances(st){
   if(!st) return st;
   if(!st.liberiFittizi || typeof st.liberiFittizi!=="object") st.liberiFittizi={};
+  if(!st.esigenzeMese || typeof st.esigenzeMese!=="object") st.esigenzeMese={};
   if(Number(st.year)!==DEFAULT_YEAR) return st;
   if(normalizeArchiveId(st.archiveId||"modena")!=="modena") return st;
   if(!st.maturato || typeof st.maturato!=="object") st.maturato={};
@@ -652,6 +671,7 @@ function defaultState(year=DEFAULT_YEAR){
     maturato: year===DEFAULT_YEAR ? JSON.parse(JSON.stringify(SEED_MATURATO)) : {},
     goduto: year===DEFAULT_YEAR ? JSON.parse(JSON.stringify(SEED_GODUTO)) : {},
     liberiFittizi: {},
+    esigenzeMese: {},
     updatedAt: new Date().toISOString()
   };
 }
@@ -707,6 +727,25 @@ function personActiveInYear(person, year=getYear()){
 function peopleForMonth(year=getYear(), month=currentMonth){
   return peopleSorted().filter(p=>personActiveInMonth(p, year, month));
 }
+/** Nota esigenze per risorsa/mese (pianificazione turni). */
+function getEsigenzaMese(personId, month=currentMonth){
+  const bag=(state.esigenzeMese||{})[personId];
+  if(!bag) return "";
+  const v=bag[String(month)];
+  return v==null ? "" : String(v);
+}
+function setEsigenzaMese(personId, month, text){
+  if(!state.esigenzeMese || typeof state.esigenzeMese!=="object") state.esigenzeMese={};
+  if(!state.esigenzeMese[personId]) state.esigenzeMese[personId]={};
+  const key=String(month);
+  const cleaned=String(text==null?"":text).replace(/\s+$/g,"");
+  if(!cleaned){
+    delete state.esigenzeMese[personId][key];
+    if(!Object.keys(state.esigenzeMese[personId]).length) delete state.esigenzeMese[personId];
+  }else{
+    state.esigenzeMese[personId][key]=cleaned;
+  }
+}
 function emptyCloudState(year, shopId, shopName){
   const id=normalizeArchiveId(shopId || "negozio");
   return {
@@ -718,6 +757,7 @@ function emptyCloudState(year, shopId, shopName){
     maturato: {},
     goduto: {},
     liberiFittizi: {},
+    esigenzeMese: {},
     updatedAt: new Date().toISOString()
   };
 }
@@ -779,6 +819,7 @@ function loadState(){
     p.maturato=p.maturato&&typeof p.maturato==="object"?p.maturato:{};
     p.goduto=p.goduto&&typeof p.goduto==="object"?p.goduto:{};
     p.liberiFittizi=p.liberiFittizi&&typeof p.liberiFittizi==="object"?p.liberiFittizi:{};
+    p.esigenzeMese=p.esigenzeMese&&typeof p.esigenzeMese==="object"?p.esigenzeMese:{};
     p.people=p.people.map(x=>normalizePerson(x, p.year));
     for(const id of Object.keys(p.turni)){
       for(const ds of Object.keys(p.turni[id]||{})){
@@ -835,6 +876,7 @@ function hydrateStateFromObject(parsed, folderName){
   parsed.maturato=parsed.maturato&&typeof parsed.maturato==="object"?parsed.maturato:{};
   parsed.goduto=parsed.goduto&&typeof parsed.goduto==="object"?parsed.goduto:{};
   parsed.liberiFittizi=parsed.liberiFittizi&&typeof parsed.liberiFittizi==="object"?parsed.liberiFittizi:{};
+  parsed.esigenzeMese=parsed.esigenzeMese&&typeof parsed.esigenzeMese==="object"?parsed.esigenzeMese:{};
   parsed.people=parsed.people.map(x=>normalizePerson(x, year));
   for(const id of Object.keys(parsed.turni)){
     for(const ds of Object.keys(parsed.turni[id]||{})){
@@ -1690,6 +1732,35 @@ function renderTurni(){
   });
 }
 
+function renderMonthNeeds(){
+  const box=document.getElementById("monthNeeds");
+  if(!box) return;
+  const people=peopleForMonth(getYear(), currentMonth);
+  if(!people.length){
+    box.innerHTML=`<p class="hint" style="margin:0">Nessuna risorsa attiva in questo mese.</p>`;
+    return;
+  }
+  box.innerHTML=people.map(p=>{
+    const note=getEsigenzaMese(p.id, currentMonth);
+    const store=p.store ? `<span class="need-store">${escapeHtml(p.store)}</span>` : "";
+    return `<div class="month-need-row">
+      <div class="need-name">${escapeHtml(p.name)}${store}</div>
+      <textarea data-need-pid="${escapeHtml(p.id)}" data-need-month="${currentMonth}" rows="2" placeholder="Esigenze per ${MONTHS[currentMonth-1].toLowerCase()}…">${escapeHtml(note)}</textarea>
+    </div>`;
+  }).join("");
+  box.querySelectorAll("textarea[data-need-pid]").forEach(ta=>{
+    const persist=()=>{
+      setEsigenzaMese(ta.dataset.needPid, Number(ta.dataset.needMonth), ta.value);
+      saveState();
+    };
+    ta.addEventListener("change", persist);
+    ta.addEventListener("blur", ()=>{
+      const cur=getEsigenzaMese(ta.dataset.needPid, Number(ta.dataset.needMonth));
+      if(String(ta.value).replace(/\s+$/g,"")!==cur) persist();
+    });
+  });
+}
+
 function renderPeople(){
   const table=document.getElementById("peopleTable");
   let html=`<thead><tr>
@@ -1886,6 +1957,7 @@ function renderAll(){
   if(h1) h1.innerHTML=`Pianificatore Turni${label?` — ${escapeHtml(label)}`:""} <span id="yearLabel">${getYear()}</span>`;
   renderMonthTabs();
   renderTurni();
+  renderMonthNeeds();
   renderPeople();
   renderFerie();
   const st=document.getElementById("saveStatus");
@@ -2665,6 +2737,7 @@ function buildRolloverYearState(fromState, fromYear, nextYear){
       maturato: {},
       goduto: {},
       liberiFittizi: {},
+      esigenzeMese: {},
       updatedAt: new Date().toISOString(),
       fromYear: y
     };
