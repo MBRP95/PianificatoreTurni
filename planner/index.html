@@ -1971,17 +1971,27 @@ async function exportMonthExcel(){
   }catch(err){ alert("Export Excel fallito: "+err.message); }
 }
 
-/** Intestazione giorno stile tabellone: "lunedì 30 novembre 2026" */
+/** Intestazione giorno stile tabellone (2 righe, come foglio obiettivo). */
 const WEEKDAYS_LONG_IT = ["lunedì","martedì","mercoledì","giovedì","venerdì","sabato","domenica"];
 function formatBoardDateHeader(d){
   const wd=WEEKDAYS_LONG_IT[(d.getDay()+6)%7];
-  return `${wd} ${d.getDate()} ${MONTHS[d.getMonth()].toLowerCase()} ${d.getFullYear()}`;
+  return `${wd}\n${d.getDate()} ${MONTHS[d.getMonth()].toLowerCase()} ${d.getFullYear()}`;
+}
+/** Nome corto in tabellone (es. BEATRICE), come nel foglio obiettivo. */
+function boardPersonLabel(person){
+  const full=String(person&&person.name||"").trim();
+  if(!full) return "";
+  const first=full.split(/\s+/)[0];
+  return first.toUpperCase();
 }
 function boardEntryText(e){
   e=normalizeEntry(e);
   if(e.kind==="RIPOSO") return "LIB";
   if(e.kind===FUORI_SEDE || (e.kind && LEGACY_CITIES.includes(e.kind))){
-    return e.kind===FUORI_SEDE ? "FUORI SEDE" : String(e.kind).toUpperCase();
+    // Nel foglio obiettivo compare la sede (es. VERONA); se c’è nota usala.
+    if(e.note) return String(e.note).trim().toUpperCase();
+    if(e.kind && LEGACY_CITIES.includes(e.kind)) return String(e.kind).toUpperCase();
+    return "FUORI SEDE";
   }
   if(e.kind) return e.kind;
   const parts=[];
@@ -1996,10 +2006,12 @@ function boardEntryText(e){
 }
 function boardEntryStyle(e, ds, store){
   e=normalizeEntry(e);
+  // Palette allineata al foglio obiettivo MB MODENA
   if(e.kind==="FERIE" || e.kind==="RIPOSO") return { bg:"92D050", color:"000000" };
   if(e.kind==="FESTIVO") return { bg:"FF0000", color:"000000" };
-  if(e.kind===FUORI_SEDE || (e.kind && LEGACY_CITIES.includes(e.kind))) return { bg:"FF0000", color:"FFFFFF" };
-  if(e.kind==="CONGEDO"||e.kind==="PERMESSO STUDIO"||e.kind==="MALATTIA") return { bg:"FFC000", color:"000000" };
+  if(e.kind===FUORI_SEDE || (e.kind && LEGACY_CITIES.includes(e.kind))) return { bg:"FF0000", color:"000000" };
+  if(e.kind==="MALATTIA") return { bg:"FF0000", color:"000000" };
+  if(e.kind==="CONGEDO"||e.kind==="PERMESSO STUDIO") return { bg:"FFC000", color:"000000" };
   if(e.par && !e.work) return { bg:"FFFF00", color:"000000" };
   if(e.work && e.par) return { bg:"FFFF00", color:"000000" };
   if(e.allatt && !e.par && !e.work) return { bg:"FFC000", color:"000000" };
@@ -2008,37 +2020,47 @@ function boardEntryStyle(e, ds, store){
   if(isHoliday(ds, store)) return { bg:"FF0000", color:"000000" };
   return { bg:"FFFFFF", color:"000000" };
 }
-function styleBoardCell(cell,{value,bg,color="000000",bold=false,size=10,align="center"}){
+function boardBorder(){
+  const s={style:"thin",color:{argb:"FFB0B0B0"}};
+  return {top:s,left:s,bottom:s,right:s};
+}
+function styleBoardCell(cell,{value,bg,color="000000",bold=false,size=10,align="center",border=true}){
   if(value!==undefined) cell.value=value;
   cell.alignment={horizontal:align,vertical:"middle",wrapText:true};
   cell.font={name:"Calibri",size,bold,color:{argb:"FF"+color}};
-  cell.border=thinBorder();
+  if(border) cell.border=boardBorder();
   if(bg) cell.fill=fillStyle(bg);
 }
 
-/** Un foglio/mese nello stile tabellone (giorno + colonna Strao). */
+/** Un foglio/mese nello stile tabellone obiettivo (giorno + Strao stretti). */
 function writeBoardMonthSheet(wb, year, month, storeLabel){
   const people=peopleForMonth(year, month);
   const weeks=weeksForMonth(year, month);
   const ws=wb.addWorksheet(MONTHS_UPPER[month-1],{
-    pageSetup:{orientation:"landscape",fitToPage:true,fitToWidth:1,fitToHeight:0},
+    pageSetup:{orientation:"landscape",fitToPage:true,fitToWidth:1,fitToHeight:0,horizontalCentered:true},
     views:[{state:"frozen", xSplit:1, ySplit:2}]
   });
-  // Col A nomi + 7×(giorno,Strao) + totale strao sett.
-  ws.getColumn(1).width=18;
+  // Proporzioni come obiettivo: nomi medi, giorno largo, Strao molto stretto, tot a destra
+  ws.getColumn(1).width=12;
   for(let i=0;i<7;i++){
-    ws.getColumn(2+i*2).width=18;
-    ws.getColumn(3+i*2).width=7;
+    ws.getColumn(2+i*2).width=15.5;
+    ws.getColumn(3+i*2).width=4.5;
   }
-  ws.getColumn(16).width=8;
+  ws.getColumn(16).width=5;
 
   let row=1;
+  // Titolo solo a sinistra (merged), come "Dicembre 2026 - MB MODENA"
+  ws.mergeCells(row,1,row,4);
   styleBoardCell(ws.getCell(row,1),{
     value:`${MONTHS[month-1]} ${year} - ${storeLabel}`,
-    bg:"FFFF00", bold:true, size:12, align:"left"
+    bg:"FFFF00", bold:true, size:14, align:"left"
   });
-  for(let c=2;c<=16;c++) styleBoardCell(ws.getCell(row,c),{value:"",bg:"FFFF00",size:10});
-  ws.getRow(row).height=20;
+  for(let c=5;c<=16;c++){
+    const cell=ws.getCell(row,c);
+    cell.value="";
+    cell.border={};
+  }
+  ws.getRow(row).height=22;
   row++;
 
   if(!people.length){
@@ -2047,32 +2069,35 @@ function writeBoardMonthSheet(wb, year, month, storeLabel){
   }
 
   for(const week of weeks){
-    // Intestazione: data | Strao × 7
+    // Intestazione settimana
     styleBoardCell(ws.getCell(row,1),{value:"",bg:"FFFF00",size:9});
     week.forEach((d,i)=>{
-      styleBoardCell(ws.getCell(row,2+i*2),{value:formatBoardDateHeader(d),bg:"FFFF00",bold:true,size:8});
+      styleBoardCell(ws.getCell(row,2+i*2),{value:formatBoardDateHeader(d),bg:"FFFF00",bold:true,size:9});
       styleBoardCell(ws.getCell(row,3+i*2),{value:"Strao",bg:"FFFF00",bold:true,size:8});
     });
-    styleBoardCell(ws.getCell(row,16),{value:"Tot strao",bg:"FFFF00",bold:true,size:8});
-    ws.getRow(row).height=28;
+    styleBoardCell(ws.getCell(row,16),{value:"",bg:"FFFF00",size:8});
+    ws.getRow(row).height=32;
     row++;
 
     people.forEach((person)=>{
       const dayOts=weekDayOvertimeList(person, week);
-      styleBoardCell(ws.getCell(row,1),{value:person.name,bg:"C6EFCE",bold:true,size:9,align:"left"});
+      styleBoardCell(ws.getCell(row,1),{
+        value:boardPersonLabel(person),
+        bg:"C6EFCE", bold:true, size:11, align:"left"
+      });
       week.forEach((d,i)=>{
         const ds=iso(d);
         const dayCell=ws.getCell(row,2+i*2);
         const straoCell=ws.getCell(row,3+i*2);
         if(!personActiveOn(person, ds)){
-          styleBoardCell(dayCell,{value:"",bg:"F2F2F2",size:9});
+          styleBoardCell(dayCell,{value:"",bg:"F2F2F2",size:10});
           styleBoardCell(straoCell,{value:"",bg:"F2F2F2",size:9});
           return;
         }
         const e=getEntry(person.id, ds);
         const txt=boardEntryText(e);
         const st=boardEntryStyle(e, ds, person.store);
-        styleBoardCell(dayCell,{value:txt||"",bg:st.bg,color:st.color,size:9});
+        styleBoardCell(dayCell,{value:txt||"",bg:st.bg,color:st.color,size:10});
         const ot=dayOts[i]||0;
         styleBoardCell(straoCell,{value:ot>0?round3(ot):"",bg:"FFFFFF",size:9});
       });
@@ -2082,9 +2107,9 @@ function writeBoardMonthSheet(wb, year, month, storeLabel){
       row++;
     });
 
-    // riga vuota di separazione
-    for(let c=1;c<=16;c++) styleBoardCell(ws.getCell(row,c),{value:"",bg:"FFFFFF",size:8});
-    ws.getRow(row).height=10;
+    // riga note/vuota sotto il blocco settimana (come obiettivo)
+    for(let c=1;c<=16;c++) styleBoardCell(ws.getCell(row,c),{value:"",bg:"FFFFFF",size:9});
+    ws.getRow(row).height=16;
     row++;
   }
 }
