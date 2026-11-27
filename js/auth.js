@@ -325,6 +325,20 @@
     });
   }
 
+  /** Elenco anni già salvati in Firestore per il negozio (doc id = anno). */
+  async function listArchiveYears(shopId) {
+    const api = window.firebaseApi;
+    if (!shopId || !api?.collection || !api?.getDocs) return [];
+    const snap = await api.getDocs(api.collection(api.db, "archives", shopId, "years"));
+    const years = [];
+    snap.forEach((d) => {
+      const y = Number(d.id);
+      if (Number.isFinite(y) && y >= 2000 && y <= 2100) years.push(y);
+    });
+    years.sort((a, b) => a - b);
+    return years;
+  }
+
   window.TurniAuth = {
     generateInitialAccountPassword,
     staffUsername,
@@ -339,6 +353,7 @@
     loginWithUsernamePassword,
     loadArchive,
     saveArchive,
+    listArchiveYears,
     AUTH_MODE_DIRECT,
   };
 })();

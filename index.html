@@ -212,6 +212,7 @@ main.planner-open iframe#plannerFrame{min-height:calc(100vh - 120px);height:calc
         <label style="margin:0;font-weight:650;color:var(--ink)">Anno
           <select id="yearSelect" style="width:auto;display:inline-block;margin-left:6px"></select>
         </label>
+        <button type="button" id="btnAddYear" title="Aggiungi l'anno successivo alla lista">＋ Anno</button>
         <button type="button" class="primary" id="btnOpenPlanner">Apri pianificatore</button>
         <a href="./manuale/" style="appearance:none;border:1px solid var(--line-strong);background:#fff;color:var(--ink);border-radius:var(--radius);padding:8px 14px;font:inherit;font-size:.875rem;font-weight:650;text-decoration:none">Manuale</a>
       </div>
@@ -220,6 +221,7 @@ main.planner-open iframe#plannerFrame{min-height:calc(100vh - 120px);height:calc
     <div id="plannerBar">
       <label class="year-wrap">Anno
         <select id="yearSelectBar"></select>
+        <button type="button" id="btnAddYearBar" title="Aggiungi l'anno successivo alla lista">＋ Anno</button>
       </label>
       <div class="actions" style="margin:0">
         <button type="button" class="primary" id="btnReloadYear">Apri anno</button>
@@ -230,12 +232,16 @@ main.planner-open iframe#plannerFrame{min-height:calc(100vh - 120px);height:calc
   </section>
 </main>
 
-<script src="./js/firebase-config.js?v=26"></script>
-<script src="./js/auth.js?v=26"></script>
-<script type="module" src="./js/firebase-init.js?v=26"></script>
+<script src="./js/firebase-config.js?v=27"></script>
+<script src="./js/auth.js?v=27"></script>
+<script type="module" src="./js/firebase-init.js?v=27"></script>
 <script>
 let currentProfile = null;
 let loginInProgress = false;
+/** Anno minimo del selettore (allineato al seed Modena). */
+const MIN_PLAN_YEAR = 2026;
+/** Anni aggiunti a mano (per negozio) oltre a quelli già in Firestore. */
+const EXTRA_YEARS_KEY = "turni.extraYears.v1";
 
 function $(id){ return document.getElementById(id); }
 function show(id){ $(id).classList.remove("hidden"); }
@@ -277,21 +283,81 @@ async function afterAuth(profile){
   }
 }
 
-function fillYears(){
-  const y = new Date().getFullYear();
-  const current = $("yearSelect")?.value || String(y);
+function shopYearsKey(shopId){
+  return EXTRA_YEARS_KEY + ":" + String(shopId||"negozio").toLowerCase();
+}
+function readExtraYears(shopId){
+  try{
+    const raw = localStorage.getItem(shopYearsKey(shopId));
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr.map(Number).filter((n)=>Number.isFinite(n)) : [];
+  }catch(_){ return []; }
+}
+function writeExtraYears(shopId, years){
+  const uniq = [...new Set((years||[]).map(Number).filter((n)=>Number.isFinite(n)))].sort((a,b)=>a-b);
+  try{ localStorage.setItem(shopYearsKey(shopId), JSON.stringify(uniq)); }catch(_){}
+  return uniq;
+}
+function rememberYear(shopId, year){
+  const y = Number(year);
+  if(!Number.isFinite(y)) return;
+  writeExtraYears(shopId, [...readExtraYears(shopId), y]);
+}
+
+function renderYearOptions(years, selected){
+  const list = [...new Set((years||[]).map(Number).filter((n)=>Number.isFinite(n)))].sort((a,b)=>a-b);
+  const prefer = Number(selected) || new Date().getFullYear();
+  const pick = list.includes(prefer) ? prefer : (list.includes(new Date().getFullYear()) ? new Date().getFullYear() : list[list.length-1]);
   ["yearSelect", "yearSelectBar"].forEach((id)=>{
     const sel = $(id);
     if(!sel) return;
     sel.innerHTML = "";
-    for(let i = y - 1; i <= y + 2; i++){
+    for(const i of list){
       const o = document.createElement("option");
       o.value = String(i);
       o.textContent = String(i);
-      if(String(i) === String(current) || (!current && i === y)) o.selected = true;
+      if(i === pick) o.selected = true;
       sel.appendChild(o);
     }
   });
+}
+
+async function fillYears(){
+  const now = new Date().getFullYear();
+  const shopId = currentProfile?.shopId || "";
+  const current = Number($("yearSelect")?.value) || Number($("yearSelectBar")?.value) || now;
+  const years = new Set();
+  // Sempre almeno da MIN_PLAN_YEAR fino all'anno corrente + 1 (così c'è sempre il prossimo)
+  for(let i = MIN_PLAN_YEAR; i <= Math.max(now + 1, current); i++) years.add(i);
+  for(const y of readExtraYears(shopId)) years.add(y);
+  try{
+    const remote = await window.TurniAuth?.listArchiveYears?.(shopId);
+    if(Array.isArray(remote)) remote.forEach((y)=>years.add(Number(y)));
+  }catch(_){}
+  // Se in Firebase c'è un anno alto (es. 2035), copri anche i buchi fino a lì
+  const maxKnown = Math.max(...years, now + 1);
+  for(let i = MIN_PLAN_YEAR; i <= maxKnown; i++) years.add(i);
+  renderYearOptions([...years], current);
+}
+
+function addNextYear(openAfter){
+  const shopId = currentProfile?.shopId || "";
+  const sels = [$("yearSelect"), $("yearSelectBar")].filter(Boolean);
+  let maxY = MIN_PLAN_YEAR - 1;
+  for(const sel of sels){
+    for(const opt of sel.options){
+      const n = Number(opt.value);
+      if(Number.isFinite(n) && n > maxY) maxY = n;
+    }
+  }
+  const next = maxY + 1;
+  rememberYear(shopId, next);
+  const all = new Set();
+  for(let i = MIN_PLAN_YEAR; i <= next; i++) all.add(i);
+  for(const y of readExtraYears(shopId)) all.add(y);
+  renderYearOptions([...all], next);
+  setMsg($("storeMsg"), `Anno ${next} aggiunto. Aprilo: i dipendenti arrivano dal ${next-1} (rollover).`);
+  if(openAfter) openPlanner(true);
 }
 
 function syncYearSelects(fromId){
@@ -302,6 +368,7 @@ function syncYearSelects(fromId){
     const sel = $(id);
     if(sel) sel.value = v;
   });
+  if(currentProfile?.shopId) rememberYear(currentProfile.shopId, v);
 }
 
 function closePlanner(){
@@ -489,7 +556,7 @@ function openPlanner(fromBar){
     shopId: currentProfile.shopId || "",
     shopName: currentProfile.shopName || "",
     year: year,
-    v: "47",
+    v: "48",
     _: String(Date.now()),
   });
   frame.src = "./planner/index.html?" + params.toString();
@@ -514,6 +581,8 @@ async function boot(){
   $("btnOpenPlanner").addEventListener("click", ()=>openPlanner(false));
   $("btnReloadYear").addEventListener("click", ()=>openPlanner(true));
   $("btnClosePlanner").addEventListener("click", closePlanner);
+  $("btnAddYear")?.addEventListener("click", ()=>addNextYear(false));
+  $("btnAddYearBar")?.addEventListener("click", ()=>addNextYear(true));
   $("yearSelect").addEventListener("change", ()=>syncYearSelects("yearSelect"));
   $("yearSelectBar").addEventListener("change", ()=>{
     syncYearSelects("yearSelectBar");
