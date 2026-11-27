@@ -85,27 +85,27 @@ table.people{width:max-content;min-width:1080px;border-collapse:separate;border-
 .people button[data-del]{white-space:nowrap;padding:8px 12px}
 body.cloud-embed main{max-width:none;padding:10px 10px 28px}
 body.cloud-embed header .wrap{max-width:none}
-.month-ferie{margin-bottom:12px}
-.month-ferie h3{margin:0 0 4px;font-size:.88rem}
-/* Tabella ferie/PAR compatta: tutta la riga visibile senza zoom eccessivo */
-#view-ferie .summary{font-size:.72rem;table-layout:auto}
-#view-ferie .summary th,#view-ferie .summary td{padding:3px 4px;vertical-align:middle}
-#view-ferie .summary th{font-size:.62rem;letter-spacing:.02em;white-space:normal;line-height:1.15;max-width:72px}
-#view-ferie .summary th:first-child,#view-ferie .summary td:first-child{max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#view-ferie .summary td.num{padding-left:2px;padding-right:4px}
-.field-wrap{display:inline-flex;align-items:center;gap:2px;justify-content:flex-end}
-.field-wrap input.mat-input{width:64px;border:1px solid var(--line);border-radius:5px;padding:2px 4px;font:inherit;font-size:.72rem;text-align:right}
+.month-ferie{margin-bottom:14px}
+.month-ferie h3{margin:0 0 6px;font-size:.92rem}
+/* Tabella ferie/PAR: leggibile, colonne strette senza vuoti larghi */
+#view-ferie .month-ferie > div{overflow-x:auto}
+#view-ferie .summary{width:max-content;max-width:100%;font-size:.8rem;border-collapse:collapse}
+#view-ferie .summary th,#view-ferie .summary td{padding:5px 6px;vertical-align:middle}
+#view-ferie .summary th{font-size:.68rem;letter-spacing:.02em;white-space:nowrap;line-height:1.2;max-width:none}
+#view-ferie .summary td:first-child{max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+#view-ferie .summary td.num{padding-left:6px;padding-right:6px}
+.field-wrap{display:inline-flex;align-items:center;gap:3px;justify-content:flex-end}
+.field-wrap input.mat-input{width:72px;border:1px solid var(--line);border-radius:6px;padding:3px 5px;font:inherit;font-size:.8rem;text-align:right}
 .field-wrap input.mat-input.auto{background:#f4f7f9;color:var(--muted)}
 .field-wrap input.mat-input.manuale{background:#fff;border-color:#9bb7a8}
-button.mode-sw{min-width:22px;padding:2px 4px;font-size:.62rem;font-weight:800;letter-spacing:.02em;border-radius:5px}
+button.mode-sw{min-width:24px;padding:3px 5px;font-size:.68rem;font-weight:800;letter-spacing:.02em;border-radius:5px}
 button.mode-sw.auto{background:var(--accent-soft);border-color:#b7d7cb;color:var(--accent)}
 button.mode-sw.manuale{background:#fff4e5;border-color:#e0c08a;color:#8a5a00}
-.fittizi-wrap{display:inline-flex;align-items:center;gap:4px;justify-content:flex-end}
-button.fittizi-sw{min-width:42px;padding:2px 5px;font-size:.62rem;font-weight:800;letter-spacing:.03em;border-radius:5px}
+.fittizi-wrap{display:inline-flex;align-items:center;justify-content:center}
+button.fittizi-sw{min-width:46px;padding:3px 7px;font-size:.7rem;font-weight:800;letter-spacing:.03em;border-radius:6px}
 button.fittizi-sw.si{background:#EAF5FE;border-color:#9dc3e6;color:#014486}
 button.fittizi-sw.no{background:#f4f6f8;border-color:#c9c7c5;color:#3e3e3c}
-button.fittizi-sw .fittizi-a{margin-left:3px;font-size:.58rem;opacity:.75;font-weight:700}
-.fittizi-liberi{font-size:.68rem;color:var(--muted);font-variant-numeric:tabular-nums}
+button.fittizi-sw .fittizi-a{margin-left:3px;font-size:.62rem;opacity:.75;font-weight:700}
 #btnHoursExport.hidden{display:none!important}
 .month-needs{margin-top:18px;padding-top:14px;border-top:1px solid var(--line)}
 .month-needs h3{margin:0 0 6px;font-size:.95rem}
@@ -1850,7 +1850,7 @@ function fieldEditHtml(pid, month, kind, field, value, mode){
   </div></td>`;
 }
 
-function fittiziFlagHtml(pid, month, fittizi, fittiziMode, liberi){
+function fittiziFlagHtml(pid, month, fittizi, fittiziMode){
   const si=!!fittizi;
   const auto=fittiziMode!=="manuale";
   const cls=si?"si":"no";
@@ -1860,7 +1860,6 @@ function fittiziFlagHtml(pid, month, fittizi, fittiziMode, liberi){
     : `Liberi fittizi forzati = ${label} — clicca per cambiare / tornare ad auto`;
   return `<td class="num"><div class="fittizi-wrap">
     <button type="button" class="fittizi-sw ${cls}" title="${title}" data-fittizi-pid="${pid}" data-fittizi-month="${month}">${label}${auto?`<span class="fittizi-a">A</span>`:""}</button>
-    <span class="fittizi-liberi" title="Liberi usati nel calcolo">${liberi}</span>
   </div></td>`;
 }
 
@@ -1871,7 +1870,9 @@ function renderFerie(){
     html+=`<div class="month-ferie"><h3>${MONTHS[month-1]} ${getYear()}</h3>
     <div style="overflow-x:auto"><table class="summary">
       <thead><tr>
-        <th>Risorsa</th><th>Liberi fittizi</th>
+        <th>Risorsa</th>
+        <th>Liberi fittizi</th>
+        <th title="Liberi pianificati usati nel calcolo maturazione">Liberi</th>
         <th title="Giorni utili considerati alla maturazione ferie">Giorni utili ferie</th>
         <th title="Giorni utili considerati alla maturazione PAR">Giorni utili PAR</th>
         <th>Ferie gg</th><th>PAR h</th>
@@ -1883,7 +1884,8 @@ function renderFerie(){
       const b=balancesFor(p, month);
       html+=`<tr>
         <td>${escapeHtml(p.name)}</td>
-        ${fittiziFlagHtml(p.id, month, b.fittizi, b.fittiziMode, b.liberi)}
+        ${fittiziFlagHtml(p.id, month, b.fittizi, b.fittiziMode)}
+        <td class="num" title="Liberi pianificati">${Number(b.liberi)||0}</td>
         <td class="num" title="Giorni utili ferie">${Number(b.giorniUtiliFerie)||0}</td>
         <td class="num" title="Giorni utili PAR">${Number(b.giorniUtiliPar)||0}</td>
         <td class="num">${u.ferieDays}</td>
