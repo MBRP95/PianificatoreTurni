@@ -174,7 +174,10 @@ body.cloud-embed #btnHoursExport{right:10px;bottom:10px}
   <section class="panel" id="view-turni">
     <div class="toolbar" style="justify-content:space-between">
       <h2 id="monthTitle" style="margin:0">Turni</h2>
-      <button class="primary" type="button" id="btnExport">Esporta mese Excel (HR)</button>
+      <div class="actions">
+        <button class="primary" type="button" id="btnExport">Esporta mese Excel (HR)</button>
+        <button type="button" id="btnExportYear" title="Excel tabellone annuale: settimane con colonne giorno + Strao">Esporta anno Excel (tabellone)</button>
+      </div>
     </div>
     <div id="monthTabs"></div>
     <div id="turniGrid"></div>
@@ -1968,6 +1971,162 @@ async function exportMonthExcel(){
   }catch(err){ alert("Export Excel fallito: "+err.message); }
 }
 
+/** Intestazione giorno stile tabellone: "lunedì 30 novembre 2026" */
+const WEEKDAYS_LONG_IT = ["lunedì","martedì","mercoledì","giovedì","venerdì","sabato","domenica"];
+function formatBoardDateHeader(d){
+  const wd=WEEKDAYS_LONG_IT[(d.getDay()+6)%7];
+  return `${wd} ${d.getDate()} ${MONTHS[d.getMonth()].toLowerCase()} ${d.getFullYear()}`;
+}
+function boardEntryText(e){
+  e=normalizeEntry(e);
+  if(e.kind==="RIPOSO") return "LIB";
+  if(e.kind===FUORI_SEDE || (e.kind && LEGACY_CITIES.includes(e.kind))){
+    return e.kind===FUORI_SEDE ? "FUORI SEDE" : String(e.kind).toUpperCase();
+  }
+  if(e.kind) return e.kind;
+  const parts=[];
+  if(e.work) parts.push(e.work);
+  if(e.allatt) parts.push(`${String(e.allatt).replace(".",",")}H ALLATT`);
+  if(e.par){
+    if(!e.work && Number(e.par)>=8) parts.push("PAR");
+    else parts.push(`${String(e.par).replace(".",",")}H PAR`);
+  }
+  if(!parts.length && e.note) return e.note;
+  return parts.join("\n");
+}
+function boardEntryStyle(e, ds, store){
+  e=normalizeEntry(e);
+  if(e.kind==="FERIE" || e.kind==="RIPOSO") return { bg:"92D050", color:"000000" };
+  if(e.kind==="FESTIVO") return { bg:"FF0000", color:"000000" };
+  if(e.kind===FUORI_SEDE || (e.kind && LEGACY_CITIES.includes(e.kind))) return { bg:"FF0000", color:"FFFFFF" };
+  if(e.kind==="CONGEDO"||e.kind==="PERMESSO STUDIO"||e.kind==="MALATTIA") return { bg:"FFC000", color:"000000" };
+  if(e.par && !e.work) return { bg:"FFFF00", color:"000000" };
+  if(e.work && e.par) return { bg:"FFFF00", color:"000000" };
+  if(e.allatt && !e.par && !e.work) return { bg:"FFC000", color:"000000" };
+  if(e.work) return { bg:"FFFFFF", color:"000000" };
+  if(e.note) return { bg:"92D050", color:"000000" };
+  if(isHoliday(ds, store)) return { bg:"FF0000", color:"000000" };
+  return { bg:"FFFFFF", color:"000000" };
+}
+function styleBoardCell(cell,{value,bg,color="000000",bold=false,size=10,align="center"}){
+  if(value!==undefined) cell.value=value;
+  cell.alignment={horizontal:align,vertical:"middle",wrapText:true};
+  cell.font={name:"Calibri",size,bold,color:{argb:"FF"+color}};
+  cell.border=thinBorder();
+  if(bg) cell.fill=fillStyle(bg);
+}
+
+/** Un foglio/mese nello stile tabellone (giorno + colonna Strao). */
+function writeBoardMonthSheet(wb, year, month, storeLabel){
+  const people=peopleForMonth(year, month);
+  const weeks=weeksForMonth(year, month);
+  const ws=wb.addWorksheet(MONTHS_UPPER[month-1],{
+    pageSetup:{orientation:"landscape",fitToPage:true,fitToWidth:1,fitToHeight:0},
+    views:[{state:"frozen", xSplit:1, ySplit:2}]
+  });
+  // Col A nomi + 7×(giorno,Strao) + totale strao sett.
+  ws.getColumn(1).width=18;
+  for(let i=0;i<7;i++){
+    ws.getColumn(2+i*2).width=18;
+    ws.getColumn(3+i*2).width=7;
+  }
+  ws.getColumn(16).width=8;
+
+  let row=1;
+  styleBoardCell(ws.getCell(row,1),{
+    value:`${MONTHS[month-1]} ${year} - ${storeLabel}`,
+    bg:"FFFF00", bold:true, size:12, align:"left"
+  });
+  for(let c=2;c<=16;c++) styleBoardCell(ws.getCell(row,c),{value:"",bg:"FFFF00",size:10});
+  ws.getRow(row).height=20;
+  row++;
+
+  if(!people.length){
+    styleBoardCell(ws.getCell(row,1),{value:"Nessuna risorsa attiva",bg:"FFFFFF",align:"left"});
+    return;
+  }
+
+  for(const week of weeks){
+    // Intestazione: data | Strao × 7
+    styleBoardCell(ws.getCell(row,1),{value:"",bg:"FFFF00",size:9});
+    week.forEach((d,i)=>{
+      styleBoardCell(ws.getCell(row,2+i*2),{value:formatBoardDateHeader(d),bg:"FFFF00",bold:true,size:8});
+      styleBoardCell(ws.getCell(row,3+i*2),{value:"Strao",bg:"FFFF00",bold:true,size:8});
+    });
+    styleBoardCell(ws.getCell(row,16),{value:"Tot strao",bg:"FFFF00",bold:true,size:8});
+    ws.getRow(row).height=28;
+    row++;
+
+    people.forEach((person)=>{
+      const dayOts=weekDayOvertimeList(person, week);
+      styleBoardCell(ws.getCell(row,1),{value:person.name,bg:"C6EFCE",bold:true,size:9,align:"left"});
+      week.forEach((d,i)=>{
+        const ds=iso(d);
+        const dayCell=ws.getCell(row,2+i*2);
+        const straoCell=ws.getCell(row,3+i*2);
+        if(!personActiveOn(person, ds)){
+          styleBoardCell(dayCell,{value:"",bg:"F2F2F2",size:9});
+          styleBoardCell(straoCell,{value:"",bg:"F2F2F2",size:9});
+          return;
+        }
+        const e=getEntry(person.id, ds);
+        const txt=boardEntryText(e);
+        const st=boardEntryStyle(e, ds, person.store);
+        styleBoardCell(dayCell,{value:txt||"",bg:st.bg,color:st.color,size:9});
+        const ot=dayOts[i]||0;
+        styleBoardCell(straoCell,{value:ot>0?round3(ot):"",bg:"FFFFFF",size:9});
+      });
+      const weekOt=weekOvertime(person, week);
+      styleBoardCell(ws.getCell(row,16),{value:weekOt>0?round3(weekOt):0,bg:"FFFFFF",size:9});
+      ws.getRow(row).height=18;
+      row++;
+    });
+
+    // riga vuota di separazione
+    for(let c=1;c<=16;c++) styleBoardCell(ws.getCell(row,c),{value:"",bg:"FFFFFF",size:8});
+    ws.getRow(row).height=10;
+    row++;
+  }
+}
+
+async function buildYearBoardWorkbook(){
+  if(typeof ExcelJS==="undefined") throw new Error("ExcelJS non caricato");
+  const year=getYear();
+  const storeLabel=resolveArchiveLabel(state) || getArchiveId() || "negozio";
+  const wb=new ExcelJS.Workbook();
+  wb.creator="Pianificatore Turni";
+  wb.title=`Tabellone turni ${storeLabel} ${year}`;
+  for(let m=1;m<=12;m++){
+    writeBoardMonthSheet(wb, year, m, storeLabel);
+  }
+  return {
+    wb,
+    filename:`Tabellone_turni_${normalizeArchiveId(storeLabel)}_${year}.xlsx`
+  };
+}
+
+async function exportYearBoardExcel(){
+  const btn=document.getElementById("btnExportYear");
+  if(btn){ btn.disabled=true; btn.textContent="Esporto anno…"; }
+  try{
+    const { wb, filename }=await buildYearBoardWorkbook();
+    const buf=await downloadWorkbook(wb, filename);
+    if(folderHandle){
+      try{
+        await writeExcelToFolder(buf, filename);
+        setFolderStatus(`Tabellone annuale salvato anche in ${folderHandle.name}/documenti/${filename}`);
+      }catch(e){
+        setFolderStatus("Excel scaricato; copia in OneDrive non riuscita: "+e.message);
+      }
+    }
+  }catch(err){
+    console.error(err);
+    alert("Export tabellone annuale fallito: "+(err&&err.message?err.message:err));
+  }finally{
+    if(btn){ btn.disabled=false; btn.textContent="Esporta anno Excel (tabellone)"; }
+  }
+}
+
 /** Excel: riga 1 = nomi risorse; righe successive = ore lavorate per giorno del mese aperto. */
 async function buildHoursByDayWorkbook(month=currentMonth){
   if(typeof ExcelJS==="undefined") throw new Error("ExcelJS non caricato");
@@ -2669,6 +2828,7 @@ function init(){
   document.getElementById("chooseFolder").addEventListener("click", ()=>chooseFolder());
   document.getElementById("loadArchive").addEventListener("click", ()=>loadArchive());
   document.getElementById("btnExport").addEventListener("click", exportMonthExcel);
+  document.getElementById("btnExportYear")?.addEventListener("click", exportYearBoardExcel);
   document.getElementById("btnHoursExport")?.addEventListener("click", exportHoursByDayExcel);
   document.getElementById("addPerson").addEventListener("click",()=>{
     openAddPersonModal();
