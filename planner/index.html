@@ -1176,10 +1176,10 @@ function isMonthFullyCompiled(personId, month){
 }
 
 /**
- * Giorni che maturano nel mese (formula tipo colonna AK da settembre):
+ * Giorni che maturano nel mese (allineato a CCNL Telco / prassi comporto):
  * - RIPOSO (L) → non matura nulla
- * - CONGEDO / MALATTIA → matura solo ferie (non PAR)
- * - ALLATTAMENTO → matura ferie (e PAR); le ore non scalano il goduto PAR
+ * - CONGEDO / MALATTIA → maturano ferie e PAR (come in servizio)
+ * - ALLATTAMENTO → matura ferie e PAR; le ore non scalano il goduto PAR
  * - resto (lavoro, FERIE, PAR, FESTIVO, fuori sede, vuoto…) → matura ferie e PAR
  */
 function monthAccrualDayCounts(person, month){
@@ -1192,8 +1192,8 @@ function monthAccrualDayCounts(person, month){
     const e=getEntry(person.id, ds);
     if(e.kind==="RIPOSO"){ liberi++; continue; }
     ferieDays++;
-    if(e.kind==="CONGEDO" || e.kind==="MALATTIA"){ congedi++; continue; }
     parDays++;
+    if(e.kind==="CONGEDO" || e.kind==="MALATTIA") congedi++;
   }
   return { ferieDays, parDays, liberi, congedi };
 }
